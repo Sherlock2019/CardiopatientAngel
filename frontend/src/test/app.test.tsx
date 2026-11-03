@@ -15,9 +15,9 @@ describe("Command Center", () => {
   it("renders KPIs, the alarm queue and the outcome comparison", async () => {
     mockFetch({ "/api/auth/me": USER, "/api/dashboard/summary": SUMMARY, "/api/alarms": { items: [ALARM], total: 1 }, "/api/analytics/outcomes": OUTCOMES });
     renderPage(<CommandCenter />);
-    expect(await screen.findByText("173")).toBeInTheDocument();
+    expect((await screen.findAllByText("173")).length).toBeGreaterThan(0); // KPI panel + ward banner
     expect(screen.getByText("Monitored patients")).toBeInTheDocument();
-    expect(await screen.findByText("Avery Lambert")).toBeInTheDocument();
+    expect((await screen.findAllByText("Avery Lambert")).length).toBeGreaterThan(0); // monitor tile + queue row
     // Severity is conveyed by text, not colour alone
     expect(screen.getByText("Critical", { selector: "span" })).toBeInTheDocument();
     expect(screen.getByText("152 bpm".split(" ")[0])).toBeInTheDocument();
@@ -48,7 +48,7 @@ describe("Command Center", () => {
     });
     renderPage(<CommandCenter />);
     expect(screen.getAllByRole("status").length).toBeGreaterThan(0);
-    expect(await screen.findByText("Internal server error")).toBeInTheDocument();
+    expect((await screen.findAllByText("Internal server error")).length).toBeGreaterThan(0);
   });
 
   it("drills down from an alarm to the patient", async () => {

@@ -43,6 +43,50 @@ body { background: var(--color-plane); color: var(--color-ink); }
 .md blockquote { border-left: 3px solid #fab219; background: #fff8e6; padding: 6px 10px; margin: 8px 0; }
 .md a { color: var(--color-brand-dark); text-decoration: underline; }
 
+/* Grafana-style dark dashboard scope: re-points the theme tokens so every card/text utility inside turns dark */
+.grafana {
+  --color-surface: #181b1f;
+  --color-plane: #111217;
+  --color-ink: #d8d9da;
+  --color-ink-2: #ccccdc;
+  --color-muted: #8e8e96;
+  --color-grid: #2c3235;
+  --color-axis: #464c54;
+  --color-brand: #5794f2;
+  --color-brand-dark: #6e9fff;
+  --color-brand-soft: #1f2c44;
+  --color-good-text: #73bf69;
+  background: #111217;
+  color: var(--color-ink);
+}
+.grafana .rounded-xl { border-radius: 4px; }
+.grafana .shadow-sm { box-shadow: none; }
+.grafana .border-black\/10, .grafana .border-black\/5 { border-color: #2c3235; }
+.grafana .bg-white { background-color: #22252b; }
+.grafana .bg-black\/\[0\.02\], .grafana .bg-black\/\[0\.03\], .grafana .bg-black\/\[0\.04\] { background-color: rgba(204, 204, 220, 0.05); }
+.grafana .hover\:bg-black\/5:hover { background-color: rgba(204, 204, 220, 0.08); }
+.grafana h2 { font-size: 12.5px; font-weight: 500; color: #ccccdc; }
+.grafana table th { background: #1d2025; }
+.grafana .md th { background: #1d2025; }
+
+/* bedside-monitor look: phosphor grid, scrolling trace, beating heart, pulsing danger icon */
+.scope {
+  background-color: #050b14;
+  background-image:
+    linear-gradient(rgba(61, 220, 132, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(61, 220, 132, 0.07) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+.scope-scroll { animation: scope-scroll linear infinite; }
+@keyframes scope-scroll { from { transform: translateX(0); } to { transform: translateX(-200px); } }
+.heart-beat { animation: heart-beat ease-in-out infinite; transform-origin: center; }
+@keyframes heart-beat { 0%, 100% { transform: scale(1); } 12% { transform: scale(1.14); } 24% { transform: scale(0.97); } 36% { transform: scale(1.07); } }
+.danger-pulse { animation: danger-pulse 1s ease-in-out infinite; }
+@keyframes danger-pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) {
+  .scope-scroll, .heart-beat, .danger-pulse { animation: none; }
+}
+
 @media (forced-colors: active) {
   .sev-chip { border: 1px solid CanvasText; }
 }

@@ -102,3 +102,53 @@ def test_simulator_start_stop(client, admin):
         r = client.post("/api/simulator/start", json={"interval_seconds": 5}, headers=admin)
         assert r.status_code == 200 and r.json()["running"] is True
         assert client.post("/api/simulator/stop", headers=admin).json()["running"] is False
+
+
+def test_calendar_admissions_discharges_deaths(client, nurse, engineer):
+    now = datetime.now(timezone.utc)
+    months = sorted({(now - timedelta(days=d)).strftime('%Y-%m') for d in range(0, 13)})
+    totals = {'admitted': 0, 'discharged_alive': 0, 'deceased': 0}
+    for m in months:
+        r = client.get('/api/dashboard/calendar', params={'month': m}, headers=nurse)
+        assert r.status_code == 200
+        for k in totals:
+            totals[k] += r.json()['totals'][k]
+    assert totals == {'admitted': 3, 'discharged_alive': 0, 'deceased': 1}  # fixture: A died, B and C still admitted
+    assert client.get('/api/dashboard/calendar', params={'month': '2026-13x'}, headers=nurse).status_code == 422
+    assert client.get('/api/dashboard/calendar', headers=engineer).status_code == 403
+
+
+def test_hierarchy_conditions_and_doctors(client, nurse, engineer):
+    r = client.get('/api/dashboard/hierarchy', headers=nurse)
+    assert r.status_code == 200
+    h = r.json()
+    assert h['service'] == 'Cardiology' and h['monitored_patients'] == 2  # B and C are active
+    assert h['on_call']['doctor'].startswith('Dr.')
+    # B's bradycardia was resolved long ago and C has no diagnosis -> both counted as no active diagnosis
+    cond = {c['condition']: c for c in h['conditions']}
+    assert cond['No active cardiac diagnosis']['patients'] == 2
+    blue = next(i for i in cond['No active cardiac diagnosis']['items'] if i['patient_id'] == 'P00002')
+    assert blue['doctor_in_charge'] == 'Dr. M. Okafor'
+    assert client.get('/api/dashboard/hierarchy', headers=engineer).status_code == 403
+
+
+def test_patient_list_current_medications(client, nurse):
+    items = {p['patient_id']: p for p in client.get('/api/patients', headers=nurse).json()['items']}
+    assert items['P00003']['current_medications'] == ['Metoprolol 25 mg BID']
+    assert items['P00001']['current_medications'] == []  # all orders ended before discharge
+
+
+def test_patient_status_mix(client, nurse):
+    r = client.get('/api/patients/status-mix', headers=nurse).json()
+    # A deceased; B monitored with an unacknowledged warning alarm -> at risk; C monitored, no alarms -> stable
+    assert r['counts'] == {'Stable / recovered': 1, 'At risk': 1, 'Deceased': 1}
+    r = client.get('/api/patients/status-mix', params={'sex': 'Female', 'by': 'Doctor in charge'}, headers=nurse).json()
+    assert r['patients'] == 2 and r['counts']['Deceased'] == 1
+    red = next(x for x in r['rows'] if x['category'] == 'Dr. R. Chen')
+    assert red['counts']['Deceased'] == 1
+    assert client.get('/api/patients/status-mix', params={'by': 'Shoe size'}, headers=nurse).status_code == 422
+
+
+def test_patient_list_doctor_filter(client, nurse):
+    r = client.get('/api/patients', params={'doctor': 'Dr. M. Okafor'}, headers=nurse).json()
+    assert [p['patient_id'] for p in r['items']] == ['P00002'] and r['items'][0]['doctor_in_charge'] == 'Dr. M. Okafor'

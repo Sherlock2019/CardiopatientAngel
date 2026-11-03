@@ -53,7 +53,7 @@ def _load() -> Frames:
     with engine.connect() as c:
         p = pd.read_sql(text(
             "SELECT patient_id, synthetic_name, sex, date_of_birth, admission_date, monitoring_end, care_unit, "
-            "device_type, monitoring_status, discharge_outcome FROM patients"), c)
+            "device_type, monitoring_status, discharge_outcome, assigned_care_team FROM patients"), c)
         a = pd.read_sql(text(
             "SELECT alarm_id, patient_id, alarm_type, severity, triggered_at, acknowledged_at, resolved_at, "
             "assigned_nurse FROM alarms"), c)
@@ -699,3 +699,50 @@ def attention_indicator(alarms_recent: list[dict], now: datetime) -> dict:
             {"factor": f"Repeat alarms (same type within {settings_store.get()['repeat_window_minutes']} min)", "value": repeats, "points": rep_pts},
         ],
     }
+
+
+# ------------------------------------------------------------------------------------------- patient status mix
+STATUSES = ["Stable / recovered", "At risk", "Deceased"]
+MIX_DIMENSIONS = ["Condition", "Medication class", "Age group", "Sex", "Doctor in charge"]
+
+
+def status_mix(F: Frames, filters: dict, by: str | None = None) -> dict:
+    """Operational status of every registry patient (alarm-based, NOT a clinical risk score):
+    Deceased = stay ended in death; At risk = monitored now with an unresolved warning/critical alarm or a critical alarm
+    in the last 24 h; Stable / recovered = everyone else (monitored without those alarms, or discharged alive)."""
+    p = F.patients.copy()
+    a = F.alarms
+    risky_ids = set(a[a["resolved_at"].isna() & a["severity"].isin(["warning", "critical"])]["patient_id"]) | \
+        set(a[a["is_critical"] & (a["triggered_at"] >= F.now - pd.Timedelta(hours=24))]["patient_id"])
+    p["status"] = "Stable / recovered"
+    p.loc[(p["monitoring_status"] == "active") & p["patient_id"].isin(risky_ids), "status"] = "At risk"
+    p.loc[p["discharge_outcome"] == "Deceased", "status"] = "Deceased"
+
+    def during_stay(dim: str) -> pd.DataFrame:
+        iv = F.intervals[dim].merge(p[["patient_id", "start", "end"]], on="patient_id", suffixes=("", "_m"))
+        return iv[(iv["start"] < iv["end_m"]) & (iv["end"] > iv["start_m"])][["patient_id", "key"]].drop_duplicates()
+
+    members = {
+        "Condition": during_stay("pathology"),
+        "Medication class": during_stay("medication"),
+        "Age group": p[["patient_id", "age_group"]].rename(columns={"age_group": "key"}),
+        "Sex": p[["patient_id", "sex"]].assign(key=lambda x: x["sex"].map({"F": "Female", "M": "Male"}))[["patient_id", "key"]],
+        "Doctor in charge": p[["patient_id", "assigned_care_team"]]
+            .assign(key=lambda x: x["assigned_care_team"].map(d.TEAM_DOCTOR))[["patient_id", "key"]],
+    }
+    order = {"Condition": list(d.PATHOLOGIES), "Medication class": d.MEDICATION_CLASSES, "Age group": d.AGE_GROUPS,
+             "Sex": ["Female", "Male"], "Doctor in charge": list(d.TEAM_DOCTOR.values())}
+    for dim, value in filters.items():
+        if value:
+            p = p[p["patient_id"].isin(members[dim][members[dim]["key"] == value]["patient_id"])]
+
+    def counts(df: pd.DataFrame) -> dict:
+        c = df["status"].value_counts()
+        return {s: int(c.get(s, 0)) for s in STATUSES}
+
+    out = {"statuses": STATUSES, "patients": len(p), "counts": counts(p), "by": by, "rows": [], "options": order}
+    if by:
+        m = members[by].merge(p[["patient_id", "status"]], on="patient_id")
+        out["rows"] = [{"category": k, "patients": int((m["key"] == k).sum()), "counts": counts(m[m["key"] == k])}
+                       for k in order[by]]
+    return out

@@ -22,8 +22,8 @@ The monitoring pipeline is reusable across health IoT products: each device is a
 ┌─ FRONTENDS (3 experiences) ──────────────────────────────────────────────────────────┐
 │ A  Patient app      React Native (Expo)   trends · medicines · daily check-in        │
 │                     :8081                 sees own record only                       │
-│ B  Clinical portal  React + TypeScript    alarm queue · Patient 360 · analytics      │
-│                     :5180                 cohorts · staffing · devices               │
+│ B  Clinical portal  React + TypeScript    Heart Angel chat · monitors · alarm queue  │
+│                     :5180                 Patient 360 · status pies · calendar · IoT │
 │ C  Engineering Hub  React + repo docs     lifecycle · quality · ops · knowledge      │
 │                     :5180                 no access to patient data                  │
 └──────────────────────────────────────────────────────────────────────────────────────┘
@@ -47,7 +47,7 @@ The monitoring pipeline is reusable across health IoT products: each device is a
 
 ┌─ ENGINEERING DELIVERY LOOP ──────────────────────────────────────────────────────────┐
 │ requirements ─> ADRs ─> build + PR review ─> tests ─> CI + Docker ─> operate         │
-│      ^          pytest 47 · Vitest 13 · Playwright 2              alerts │           │
+│      ^          pytest 63 · Vitest 13 · Playwright 2              alerts │           │
 │      └───────── Knowledge Hub: lessons are reviewed, cited, reused ──────┘           │
 └──────────────────────────────────────────────────────────────────────────────────────┘
 
@@ -65,6 +65,22 @@ The monitoring pipeline is reusable across health IoT products: each device is a
 ```
 
 ![Command Center](docs/screenshots/01-command-center.png)
+
+## What's in the clinical portal
+
+| Area | What you get |
+|---|---|
+| **Heart Angel** (top bar, every clinical page) | Chat box that answers from the record: a patient's medications, conditions, alarms, devices, doctor in charge and family contact; "any emergencies?" (unresolved critical alarms + doctor on call); who is on a medication; patients with a condition; stable / at-risk / deceased counts. Deterministic lookups, every question audited. Dosing, treatment changes and diagnosis are routed to the doctor in charge or on call. |
+| **Three lenses** on the Command Center | **Nurse view** (monitors, queue, devices, calendar) · **Doctor view** (the doctor's own patients as cards, critical alarms for review, status pies pre-filtered to that doctor, patients by condition, outcomes) · **Patients view** (searchable patient cards with conditions, medications, family contact, doctor in charge + link to the patient app). Doctors open on the Doctor view. |
+| **Command Center** (Grafana-style dark dashboard) | Hospital / Services / Cardiology breadcrumb with doctor on call · beating-heart ward banner with doctor, nurse and patient illustrations · stat panels incl. failing IoT devices · **priority monitors** (oscilloscope trace shaped by the alarm type, pulsing danger icon, current vital, the patient's IoT devices with battery/offline state) · live alarm queue (acknowledge) · **IoT device health** (online / low battery / offline + failing list) · **patients by condition** with doctor in charge per patient · **patient calendar** (new, released alive, deceased per day) · deceased-vs-alive comparison |
+| **Patients** | **Status pies** (stable / at risk / deceased) filtered by condition, medication class, age, sex and doctor in charge, with small pies per category and a table view · registry with current medications / treatments, doctor in charge and family contact |
+| **Patient 360** | Doctor in charge and family contact (name, relation, tap-to-call phone) |
+| **Outcomes** | Donut per category: deceased vs alive by signs during stay, conditions, treatments, age, medication class, unit |
+| **AWS architecture** (sidebar) | Front end / API / back end tiers on AWS (documented target) and the Docker demo as it runs today |
+
+Doctors (attending per care team, on-call rota per shift) and family contacts are synthetic; phone numbers use the
+fictional 555-01xx range. "At risk" is alarm-based (unresolved warning/critical alarm or a critical alarm in the last
+24 h), not a clinical risk score. Oscilloscope traces are illustrative, not recorded waveforms.
 
 ## CardioInsight — governed AI assistant (optional, local PC)
 
@@ -134,7 +150,7 @@ cd ../mobile && npm install && EXPO_PUBLIC_API_URL=http://localhost:8010 npx exp
 
 | Suite | Command | Result at the last evidence run |
 |---|---|---|
-| Backend (pytest, PostgreSQL) | `cd backend && uv run pytest` | 47 passed |
+| Backend (pytest, PostgreSQL) | `cd backend && uv run pytest` | 63 passed |
 | Frontend (Vitest) | `cd frontend && npm test` | 13 passed |
 | End to end (Playwright) | `cd frontend && npx playwright test acknowledge-workflow mobile-checkin` | 2 passed |
 

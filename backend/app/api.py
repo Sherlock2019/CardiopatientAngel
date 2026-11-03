@@ -91,6 +91,68 @@ def dashboard_summary(user: User = Depends(require("view_clinical"))):
     return {**analytics.summary(analytics.frames()), "disclaimer": DISCLAIMER}
 
 
+@router.get("/dashboard/hierarchy", tags=["dashboard"])
+def dashboard_hierarchy(db: Session = Depends(get_db), user: User = Depends(require("view_clinical"))):
+    """Hospital / service / condition / patient tree for monitored patients, with doctor in charge and doctor on call.
+    Doctors come from a synthetic roster (care team -> attending; per-shift on-call rota)."""
+    now = _now()
+    shift = d.shift_of(now.hour)
+    shift_no = (now - timedelta(hours=7)).toordinal() * 3 + [s[0] for s in d.SHIFTS].index(shift)  # shifts start 07:00
+    on_call = d.ON_CALL_ROTA[shift_no % len(d.ON_CALL_ROTA)]
+    patients = db.scalars(select(Patient).where(Patient.monitoring_status == "active")).all()
+    dx = db.execute(select(Diagnosis.patient_id, Diagnosis.pathology_name)
+                    .where(Diagnosis.active_status.is_(True), Diagnosis.diagnosis_date <= now)).all()
+    by_patient: dict[str, set[str]] = {}
+    for pid, name in dx:
+        by_patient.setdefault(pid, set()).add(name)
+    conditions: dict[str, list[dict]] = {}
+    for p in patients:
+        ref = {"patient_id": p.patient_id, "synthetic_name": p.synthetic_name, "care_unit": p.care_unit,
+               "care_team": p.assigned_care_team, "doctor_in_charge": d.TEAM_DOCTOR.get(p.assigned_care_team)}
+        for c in sorted(by_patient.get(p.patient_id) or {"No active cardiac diagnosis"}):
+            conditions.setdefault(c, []).append(ref)
+    out = []
+    for c, refs in sorted(conditions.items(), key=lambda kv: -len(kv[1])):
+        docs: dict[str, int] = {}
+        for r in refs:
+            docs[r["doctor_in_charge"]] = docs.get(r["doctor_in_charge"], 0) + 1
+        out.append({"condition": c, "code": d.PATHOLOGIES.get(c), "patients": len(refs),
+                    "doctors": [{"doctor": k, "patients": v} for k, v in sorted(docs.items(), key=lambda kv: -kv[1])],
+                    "items": sorted(refs, key=lambda r: r["synthetic_name"])})
+    teams = [{"care_team": t, "doctor_in_charge": doc, "patients": sum(p.assigned_care_team == t for p in patients)}
+             for t, doc in d.TEAM_DOCTOR.items()]
+    return {"hospital": d.HOSPITAL, "service": d.SERVICE, "monitored_patients": len(patients),
+            "on_call": {"doctor": on_call, "shift": shift}, "teams": teams, "conditions": out}
+
+
+@router.get("/dashboard/calendar", tags=["dashboard"])
+def dashboard_calendar(month: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"), tz: str = "UTC",
+                       db: Session = Depends(get_db), user: User = Depends(require("view_clinical"))):
+    """Per-day admissions, discharges alive and deaths for one calendar month (local dates in `tz`)."""
+    if tz not in available_timezones() and tz != "UTC":
+        raise HTTPException(422, "Unknown timezone")
+    zone = ZoneInfo(tz)
+    now = _now().astimezone(zone)
+    year, mon = (int(x) for x in month.split("-")) if month else (now.year, now.month)
+    start = datetime(year, mon, 1, tzinfo=zone)
+    end = datetime(year + (mon == 12), mon % 12 + 1, 1, tzinfo=zone)
+    days: dict[str, dict] = {}
+
+    def add(ts: datetime, kind: str, p: Patient):
+        day = days.setdefault(ts.astimezone(zone).date().isoformat(), {"admitted": [], "discharged_alive": [], "deceased": []})
+        day[kind].append({"patient_id": p.patient_id, "synthetic_name": p.synthetic_name, "care_unit": p.care_unit})
+
+    for p in db.scalars(select(Patient).where(Patient.admission_date >= start, Patient.admission_date < end)):
+        add(p.admission_date, "admitted", p)
+    for p in db.scalars(select(Patient).where(Patient.monitoring_end >= start, Patient.monitoring_end < end,
+                                              Patient.discharge_outcome.is_not(None))):
+        add(p.monitoring_end, "deceased" if p.discharge_outcome == "Deceased" else "discharged_alive", p)
+    totals = {k: sum(len(v[k]) for v in days.values()) for k in ("admitted", "discharged_alive", "deceased")}
+    return {"month": f"{year:04d}-{mon:02d}", "tz": tz, "today": now.date().isoformat(), "totals": totals,
+            "days": [{"date": k, **{kind: v[kind] for kind in v}, "counts": {kind: len(v[kind]) for kind in v}}
+                     for k, v in sorted(days.items())]}
+
+
 # ------------------------------------------------------------------------------------------- patients
 @router.get("/patients", tags=["patients"])
 def list_patients(
@@ -99,9 +161,11 @@ def list_patients(
     age_group: str | None = None,
     status: str | None = Query(None, pattern="^(active|discharged)$"),
     pathology: str | None = None,
+    doctor: str | None = None,
     sort: str = Query("alarms_24h", pattern="^(alarms_24h|alarms_total|active_alarms|age|admission_date|patient_id)$"),
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
+    db: Session = Depends(get_db),
     user: User = Depends(require("view_clinical")),
 ):
     F = analytics.frames()
@@ -115,6 +179,8 @@ def list_patients(
         p = p[p["age_group"] == age_group]
     if status:
         p = p[p["monitoring_status"] == status]
+    if doctor:
+        p = p[p["assigned_care_team"].isin([t for t, doc in d.TEAM_DOCTOR.items() if doc == doctor])]
     dg = F.intervals["pathology"]
     current_dx = dg[(dg["start"] <= F.now) & (dg["end"] > F.now)].groupby("patient_id")["key"].apply(lambda x: sorted(set(x)))
     if pathology:
@@ -129,15 +195,45 @@ def list_patients(
     p = p.sort_values(sort, ascending=sort in ("patient_id",))
     total = len(p)
     page_rows = p.iloc[(page - 1) * page_size: page * page_size]
+    ids = list(page_rows["patient_id"])
+    meds: dict[str, list[str]] = {}
+    for m in db.scalars(select(Medication).where(Medication.patient_id.in_(ids), Medication.start_time <= F.now,
+                                                (Medication.end_time.is_(None)) | (Medication.end_time > F.now))
+                        .order_by(Medication.medication_name)):
+        meds.setdefault(m.patient_id, []).append(f"{m.medication_name} {m.prescribed_dose}")
+    contacts = {r.patient_id: r for r in db.execute(select(Patient.patient_id, Patient.family_contact_name, Patient.family_contact_relation,
+                                                           Patient.family_contact_phone).where(Patient.patient_id.in_(ids)))}
+    txs: dict[str, list[str]] = {}
+    for t in db.scalars(select(Treatment).where(Treatment.patient_id.in_(ids), Treatment.start_date <= F.now,
+                                                (Treatment.end_date.is_(None)) | (Treatment.end_date > F.now))):
+        if t.treatment_type not in txs.setdefault(t.patient_id, []):
+            txs[t.patient_id].append(t.treatment_type)
     items = [{
         "patient_id": r.patient_id, "synthetic_name": r.synthetic_name, "age": int(r.age), "age_group": r.age_group,
         "sex": r.sex, "care_unit": r.care_unit, "monitoring_status": r.monitoring_status,
         "admission_date": r.start.isoformat(), "monitoring_end": None if r.monitoring_status == "active" else r.end.isoformat(),
         "device_type": r.device_type, "diagnoses": current_dx.get(r.patient_id, []),
+        "current_medications": meds.get(r.patient_id, []), "current_treatments": txs.get(r.patient_id, []),
+        "doctor_in_charge": d.TEAM_DOCTOR.get(r.assigned_care_team),
+        "family_contact": {"name": c.family_contact_name, "relation": c.family_contact_relation, "phone": c.family_contact_phone}
+        if (c := contacts.get(r.patient_id)) else None,
         "discharge_outcome": r.discharge_outcome if isinstance(r.discharge_outcome, str) else None,
         "alarms_total": int(r.alarms_total), "alarms_24h": int(r.alarms_24h), "active_alarms": int(r.active_alarms),
     } for r in page_rows.itertuples()]
     return {"total": total, "page": page, "page_size": page_size, "items": items}
+
+
+@router.get("/patients/status-mix", tags=["patients"])
+def patient_status_mix(
+    condition: str | None = None, medication_class: str | None = None, age_group: str | None = None,
+    sex: str | None = Query(None, pattern="^(Female|Male)$"), doctor: str | None = None,
+    by: str | None = Query(None, pattern="^(Condition|Medication class|Age group|Sex|Doctor in charge)$"),
+    user: User = Depends(require("view_clinical")),
+):
+    """Stable / at-risk / deceased patient counts (alarm-based operational status, not a clinical risk prediction)."""
+    filters = {"Condition": condition, "Medication class": medication_class, "Age group": age_group, "Sex": sex,
+               "Doctor in charge": doctor}
+    return analytics.status_mix(analytics.frames(), filters, by)
 
 
 def _get_patient(db: Session, patient_id: str) -> Patient:
@@ -179,7 +275,8 @@ def patient_detail(patient_id: str, db: Session = Depends(get_db), user: User = 
         "age": age, "age_group": d.age_group(age), "sex": p.sex, "admission_date": p.admission_date,
         "monitoring_end": p.monitoring_end, "monitoring_days": round((end - p.admission_date).total_seconds() / 86400, 1),
         "care_unit": p.care_unit, "monitoring_status": p.monitoring_status, "discharge_outcome": p.discharge_outcome,
-        "assigned_care_team": p.assigned_care_team,
+        "assigned_care_team": p.assigned_care_team, "doctor_in_charge": d.TEAM_DOCTOR.get(p.assigned_care_team),
+        "family_contact": {"name": p.family_contact_name, "relation": p.family_contact_relation, "phone": p.family_contact_phone},
         "device_id": p.device_id, "device_type": p.device_type,
         "device": _device_dict(dev, now) if (dev := db.get(Device, p.device_id)) else None,
         "diagnoses": [{"diagnosis_id": x.diagnosis_id, "diagnosis_code": x.diagnosis_code, "pathology_name": x.pathology_name,

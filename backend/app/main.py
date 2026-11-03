@@ -12,7 +12,7 @@ from sqlalchemy import text
 
 from datetime import datetime, timezone
 
-from . import api, api_analytics, api_engineering, api_insight, api_knowledge, api_patient, integration
+from . import api, api_analytics, api_engineering, api_insight, api_knowledge, api_patient, heartangel, integration
 from .config import CORS_ORIGINS
 from .db import engine
 from .simulator import bus, heartbeat_loop, simulator
@@ -86,3 +86,4 @@ app.include_router(api_knowledge.router)
 app.include_router(api_engineering.router)
 app.include_router(api_patient.router)
 app.include_router(api_insight.router)
+app.include_router(heartangel.router)

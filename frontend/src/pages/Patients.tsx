@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Activity, Pill, Search } from "lucide-react";
+import StatusMix from "../components/StatusMix";
 import { useApi } from "../lib/api";
 import { useMeta } from "../lib/meta";
 import { fmtDate } from "../lib/format";
 import { Badge, Button, Card, CardHeader, QueryBoundary, Select } from "../components/ui";
 
-interface Row {
+export interface Row {
   patient_id: string; synthetic_name: string; age: number; age_group: string; sex: string; care_unit: string;
   monitoring_status: string; discharge_outcome: string | null; admission_date: string; monitoring_end: string | null;
-  device_type: string; diagnoses: string[]; alarms_total: number; alarms_24h: number; active_alarms: number;
+  device_type: string; diagnoses: string[]; current_medications: string[]; current_treatments: string[];
+  doctor_in_charge: string | null; family_contact: { name: string | null; relation: string | null; phone: string | null } | null; alarms_total: number; alarms_24h: number; active_alarms: number;
 }
 
 export default function Patients() {
@@ -21,6 +23,7 @@ export default function Patients() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Patients</h1>
+      <StatusMix />
       <Card>
         <CardHeader
           title="Synthetic patient registry"
@@ -56,11 +59,11 @@ export default function Patients() {
           {(d) => (
             <>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[900px] text-xs">
+                <table className="w-full min-w-[1100px] text-xs">
                   <thead>
                     <tr className="border-b border-black/10 text-left text-ink-2">
-                      {["Patient", "Age / sex", "Unit", "Current diagnoses", "Admitted", "Status", "Active", "24 h", "Total"].map((h, i) => (
-                        <th key={h} className={`px-3 py-2 font-medium ${i >= 6 ? "text-right" : ""}`}>{h}</th>
+                      {["Patient", "Age / sex", "Unit", "Current diagnoses", "Current medications / treatments", "Admitted", "Status", "Active", "24 h", "Total"].map((h, i) => (
+                        <th key={h} className={`px-3 py-2 font-medium ${i >= 7 ? "text-right" : ""}`}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -70,10 +73,20 @@ export default function Patients() {
                         <td className="px-3 py-2">
                           <Link to={`/patients/${p.patient_id}`} className="font-medium text-brand-dark hover:underline">{p.synthetic_name}</Link>
                           <div className="text-[11px] text-muted">{p.patient_id} · {p.device_type}</div>
+                          {p.doctor_in_charge && <div className="text-[11px] text-muted">{p.doctor_in_charge}</div>}
+                          {p.family_contact?.name && <div className="text-[11px] text-ink-2" title={p.family_contact.relation ?? ""}>☎ {p.family_contact.name} · <span className="whitespace-nowrap">{p.family_contact.phone}</span></div>}
                         </td>
                         <td className="tabular px-3 py-2">{p.age} · {p.sex}</td>
                         <td className="px-3 py-2">{p.care_unit}</td>
                         <td className="px-3 py-2 text-ink-2">{p.diagnoses.join(", ") || "—"}</td>
+                        <td className="max-w-[260px] px-3 py-2 text-ink-2">
+                          {p.current_medications.length === 0 && p.current_treatments.length === 0 ? "—" : (
+                            <>
+                              {p.current_medications.length > 0 && <div><Pill size={11} className="mr-1 inline text-brand" aria-label="Medications" />{p.current_medications.join(", ")}</div>}
+                              {p.current_treatments.length > 0 && <div className="text-[11px] text-muted"><Activity size={11} className="mr-1 inline" aria-label="Treatments" />{p.current_treatments.join(", ")}</div>}
+                            </>
+                          )}
+                        </td>
                         <td className="tabular px-3 py-2">{fmtDate(p.admission_date)}</td>
                         <td className="px-3 py-2">
                           {p.monitoring_status === "active" ? <Badge className="border-good/40 bg-good/5 text-good-text">● Monitored</Badge>

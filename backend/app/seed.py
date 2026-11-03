@@ -522,7 +522,11 @@ def write(gen: Generator):
         cur = raw.driver_connection.cursor()
         cur.execute(f"TRUNCATE {', '.join(TABLES)} RESTART IDENTITY CASCADE")
         pcols = ["patient_id", "synthetic_name", "date_of_birth", "sex", "admission_date", "monitoring_end",
-                 "care_unit", "monitoring_status", "discharge_outcome", "assigned_care_team", "device_id", "device_type"]
+                 "care_unit", "monitoring_status", "discharge_outcome", "assigned_care_team", "device_id", "device_type",
+                 "family_contact_name", "family_contact_relation", "family_contact_phone"]
+        for p in gen.patients:
+            p["family_contact_name"], p["family_contact_relation"], p["family_contact_phone"] = \
+                d.family_contact(p["patient_id"], p["synthetic_name"])
         _copy(cur, "patients", gen.patients, pcols)
         _copy(cur, "devices", gen.devices, ["device_id", "device_type", "model", "firmware_version", "connectivity",
                                             "battery_pct", "last_sync_at", "status", "patient_id"])

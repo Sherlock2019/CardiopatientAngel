@@ -12,7 +12,7 @@ export interface DeviceRow {
   health: "online" | "offline" | "low_battery" | "returned"; patient_id: string; synthetic_name?: string; care_unit?: string;
   signals: string[]; wearable: boolean;
 }
-interface Fleet {
+export interface Fleet {
   total: number; summary: Record<"online" | "offline" | "low_battery", number>;
   by_type: { device_type: string; total: number; online: number; offline: number; low_battery: number; firmware: Record<string, number> }[];
   items: DeviceRow[];

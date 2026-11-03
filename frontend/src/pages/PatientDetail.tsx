@@ -17,6 +17,7 @@ interface Detail {
   patient_id: string; synthetic_name: string; date_of_birth: string; age: number; age_group: string; sex: string;
   admission_date: string; monitoring_end: string | null; monitoring_days: number; care_unit: string; monitoring_status: string;
   discharge_outcome: string | null; assigned_care_team: string; device_id: string; device_type: string;
+  doctor_in_charge?: string | null; family_contact?: { name: string | null; relation: string | null; phone: string | null };
   diagnoses: { diagnosis_id: number; diagnosis_code: string; pathology_name: string; diagnosis_date: string; resolved_date: string | null; active_status: boolean }[];
   medications: { medication_id: number; medication_name: string; medication_class: string; prescribed_dose: string; route: string; start_time: string; end_time: string | null; status: string }[];
   treatments: { treatment_id: number; treatment_type: string; start_date: string; end_date: string | null; status: string }[];
@@ -175,6 +176,12 @@ export default function PatientDetail() {
             </p>
             <p className="text-xs text-muted">
               Admitted {fmtTime(d.admission_date)} · {d.monitoring_end ? `monitoring ended ${fmtTime(d.monitoring_end)}` : "monitoring ongoing"} · {d.monitoring_days} days · {d.device_type} {d.device_id}
+            </p>
+            <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2">
+              {d.doctor_in_charge && <span><b className="font-medium">Doctor in charge:</b> {d.doctor_in_charge}</span>}
+              {d.family_contact?.name && (
+                <span><b className="font-medium">Family contact:</b> {d.family_contact.name} ({d.family_contact.relation}) · <a className="text-brand-dark hover:underline" href={`tel:${d.family_contact.phone?.replace(/[^\d+]/g, "")}`}>{d.family_contact.phone}</a></span>
+              )}
             </p>
           </div>
           <dl className="grid grid-cols-3 gap-4 text-center text-xs">

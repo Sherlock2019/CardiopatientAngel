@@ -34,6 +34,10 @@ class Patient(Base):
     # Hospital-stay outcome: "Deceased" | "Discharged alive" | NULL while still admitted.
     discharge_outcome: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
     assigned_care_team: Mapped[str] = mapped_column(String(40))
+    # Synthetic family / emergency contact (fictional 555-01xx numbers)
+    family_contact_name: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    family_contact_relation: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    family_contact_phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
     device_id: Mapped[str] = mapped_column(String(20))
     device_type: Mapped[str] = mapped_column(String(30))
 

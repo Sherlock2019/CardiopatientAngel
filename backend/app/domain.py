@@ -34,6 +34,26 @@ CARE_UNITS = ["Coronary Care Unit", "Cardiac Step-Down", "Telemetry Ward A", "Te
               "Remote Monitoring"]
 REMOTE_UNIT = "Remote Monitoring"  # retirement homes, remote clinics and home care, monitored by a virtual-care team
 CARE_TEAMS = ["Team Red", "Team Blue", "Team Green", "Team Gold"]
+
+# Organisation hierarchy (synthetic): hospital / service / care teams. Each care team has an attending doctor in charge;
+# the cardiology on-call doctor rotates per shift through ON_CALL_ROTA.
+HOSPITAL = "Synthetic General Hospital"
+SERVICE = "Cardiology"
+TEAM_DOCTOR = {"Team Red": "Dr. R. Chen", "Team Blue": "Dr. M. Okafor", "Team Green": "Dr. L. Nguyen", "Team Gold": "Dr. S. Patel"}
+CONTACT_FIRST = ["Alex", "Sam", "Jamie", "Robin", "Taylor", "Chris", "Dana", "Lee", "Pat", "Kim", "Jo", "Ari"]
+CONTACT_RELATION = ["Spouse", "Daughter", "Son", "Partner", "Sibling", "Friend"]
+
+
+def family_contact(patient_id: str, synthetic_name: str) -> tuple[str, str, str]:
+    """Synthetic next-of-kin, derived from the patient id (stable across reseeds and the backfill migration).
+    Phone numbers use the reserved fictional range 555-0100..0199."""
+    h = zlib.crc32(patient_id.encode())
+    surname = synthetic_name.split()[-1]
+    return (f"{CONTACT_FIRST[h % len(CONTACT_FIRST)]} {surname}", CONTACT_RELATION[(h >> 8) % len(CONTACT_RELATION)],
+            f"+1 (555) 01{(h >> 16) % 100:02d}")
+
+
+ON_CALL_ROTA = ["Dr. A. Haddad", "Dr. R. Chen", "Dr. K. Lindqvist", "Dr. M. Okafor", "Dr. L. Nguyen", "Dr. S. Patel"]
 DEVICE_TYPES = {"Bedside monitor": "BED", "Telemetry pack": "TEL", "ECG patch": "ECG", "Cuffless BP monitor": "CBP",
                 "Biosensor ring": "RNG"}
 WEARABLES = {"ECG patch", "Cuffless BP monitor", "Biosensor ring"}

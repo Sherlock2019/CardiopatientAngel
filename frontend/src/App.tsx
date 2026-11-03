@@ -1,12 +1,14 @@
 import { useEffect } from "react";
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
-import { Activity, BellRing, BookOpen, Bot, ExternalLink, PieChart as PieIcon, Workflow, Cpu, FlaskConical, GitBranch, LayoutDashboard, LogOut, Settings as Cog, Users, UsersRound, BarChart3, Radio, Watch, Wrench } from "lucide-react";
+import { Activity, BellRing, BookOpen, Bot, ExternalLink, PieChart as PieIcon, Workflow, Cpu, FlaskConical, GitBranch, LayoutDashboard, LogOut, Network, Settings as Cog, Users, UsersRound, BarChart3, Radio, Watch, Wrench } from "lucide-react";
 import Devices from "./pages/Devices";
 import EngineeringHub from "./pages/EngineeringHub";
 import Lifecycle from "./pages/Lifecycle";
 import KnowledgeHub from "./pages/KnowledgeHub";
 import Insight from "./pages/Insight";
 import Outcomes from "./pages/Outcomes";
+import Architecture from "./pages/Architecture";
+import HeartAngel from "./components/HeartAngel";
 import { useAuth } from "./lib/auth";
 import { LiveProvider, useLive } from "./lib/live";
 import { useApi } from "./lib/api";
@@ -39,6 +41,7 @@ const NAV = [
   { to: "/lifecycle", label: "Engineering Lifecycle", icon: GitBranch, perm: "view_engineering", group: "Engineering leadership" },
   { to: "/knowledge", label: "Knowledge Hub", icon: BookOpen, perm: "view_knowledge", group: "Engineering leadership" },
   { to: "/settings", label: "Settings", icon: Cog, perm: "view_clinical", group: "Clinical operations" },
+  { to: "/architecture", label: "AWS architecture", icon: Network, perm: "staff", group: "Architecture" },
 ];
 
 function Home() {
@@ -72,7 +75,8 @@ function LiveDot() {
 
 function Shell() {
   const { user, logout, can } = useAuth();
-  const nav = NAV.filter((n) => can(n.perm));
+  const isStaff = can("view_clinical") || can("view_engineering");
+  const nav = NAV.filter((n) => (n.perm === "staff" ? isStaff : can(n.perm)));
   const meta = useMeta();
   const settings = useApi<{ display_timezone: string }>(["settings"], "/api/settings");
   useEffect(() => {
@@ -94,7 +98,7 @@ function Shell() {
             </div>
           </div>
           <nav aria-label="Main" className="flex-1 space-y-0.5 overflow-y-auto px-2">
-            {["Clinical operations", "AI assistant", "Engineering leadership"].map((group) => {
+            {["Clinical operations", "AI assistant", "Engineering leadership", "Architecture"].map((group) => {
               const items = nav.filter((n) => n.group === group);
               if (!items.length) return null;
               return (
@@ -127,7 +131,9 @@ function Shell() {
                 <NavLink key={to} to={to} end={to === "/"} aria-label={label} className={({ isActive }) => cn("rounded p-2", isActive ? "bg-brand-soft text-brand-dark" : "text-ink-2")}><Icon size={16} /></NavLink>
               ))}
             </nav>
-            <p className="hidden truncate text-xs text-muted md:block">From Cardiac Monitoring Data to Better Clinical Awareness and Care-Team Coordination.</p>
+            {can("view_clinical")
+              ? <HeartAngel />
+              : <p className="hidden truncate text-xs text-muted md:block">From Cardiac Monitoring Data to Better Clinical Awareness and Care-Team Coordination.</p>}
             <div className="flex items-center gap-4">
               <span className="text-xs text-muted">Times in {settings.data?.display_timezone ?? "…"}</span>
               {can("view_clinical") && <LiveDot />}
@@ -138,6 +144,7 @@ function Shell() {
               <Route path="/" element={<Home />} />
               <Route path="/insight" element={<Insight />} />
               <Route path="/outcomes" element={<Outcomes />} />
+              <Route path="/architecture" element={<Architecture />} />
               <Route path="/engineering" element={<EngineeringHub />} />
               <Route path="/lifecycle" element={<Lifecycle />} />
               <Route path="/knowledge" element={<KnowledgeHub />} />
