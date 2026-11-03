@@ -21,6 +21,8 @@ DEMO_USERS = {
     "eng.tran": {"display_name": "Engineer B. Tran", "role": "engineer", "unit": None},
     # Synthetic patient using the mobile app; sees only their own record.
     "patient.demo": {"display_name": "Synthetic patient", "role": "patient", "unit": None},
+    # Service account used by the Flowise CardioInsight chatflow: may ask, may never approve.
+    "agent.cardioinsight": {"display_name": "CardioInsight agent (Flowise)", "role": "insight_agent", "unit": None},
 }
 
 # Permission matrix (server-side source of truth).
@@ -28,7 +30,9 @@ PERMISSIONS = {
     "view_clinical": {"nurse", "doctor", "admin"},
     "acknowledge_alarm": {"nurse", "doctor"},
     "review_alarm": {"nurse", "doctor"},
-    "view_analytics": {"nurse", "doctor", "admin"},
+    "view_analytics": {"nurse", "doctor", "admin", "insight_agent"},
+    "use_insight": {"nurse", "doctor", "admin", "eng_lead", "engineer", "insight_agent"},
+    "approve_operational": {"doctor", "admin"},
     "control_simulator": {"admin"},
     "manage_settings": {"admin"},
     "view_audit": {"admin", "doctor"},

@@ -32,6 +32,9 @@ services:
       SEED_RANDOM: ${SEED_RANDOM:-42}
       REPO_DIR: /repo
       MOBILE_PORT: ${MOBILE_PORT:-8081}
+      # CardioInsight LLM (optional, local PC): OpenAI-compatible endpoint, e.g. the supply-chain Ollama relay
+      INSIGHT_LLM_BASE_URL: ${INSIGHT_LLM_BASE_URL:-}
+      INSIGHT_LLM_MODEL: ${INSIGHT_LLM_MODEL:-qwen2.5:7b}
     volumes:
       # read-only repository view for the Engineering Hub (docs, ADRs, test evidence, source traceability)
       - ./docs:/repo/docs:ro

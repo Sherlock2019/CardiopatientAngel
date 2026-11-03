@@ -238,6 +238,29 @@ class KnowledgeUse(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
 
 
+class InsightRecommendation(Base):
+    """Operational recommendation from CardioInsight. Advisory until a human approves; outcome checked later."""
+    __tablename__ = "insight_recommendations"
+    rec_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    requested_by: Mapped[str] = mapped_column(String(60))
+    question: Mapped[str] = mapped_column(Text)
+    specialist: Mapped[str] = mapped_column(String(30))
+    action: Mapped[str] = mapped_column(Text)
+    rationale: Mapped[str] = mapped_column(Text)
+    metric: Mapped[str] = mapped_column(String(60))          # the number the outcome check re-measures
+    target: Mapped[str] = mapped_column(String(60))          # which unit / device type / shift it applies to
+    baseline: Mapped[float] = mapped_column(Float)
+    better: Mapped[str] = mapped_column(String(8))           # "lower" | "higher"
+    evidence: Mapped[str] = mapped_column(Text)              # JSON of the deterministic tool output (calc)
+    status: Mapped[str] = mapped_column(String(12), index=True)  # proposed | approved | rejected
+    decided_by: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    decision_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    outcome: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON: current value, delta, improved
+    outcome_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 class IntegrationEvent(Base):
     """Transactional outbox: events for external systems (telemedicine platform, EHR), delivered by a relay."""
     __tablename__ = "integration_events"

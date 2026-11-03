@@ -14,5 +14,9 @@ CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:5
 HOSPITAL_TZ = os.getenv("HOSPITAL_TZ", "America/New_York")
 SEED_RANDOM = int(os.getenv("SEED_RANDOM", "42"))
 # Repository root (read-only) for the Engineering Hub: docs, ADRs, test evidence, source traceability.
-REPO_DIR = Path(os.getenv("REPO_DIR", Path(__file__).resolve().parents[2]))
+# CardioInsight LLM: any OpenAI-compatible endpoint (local Ollama via the supply-chain relay). Empty = deterministic only.
+INSIGHT_LLM_BASE_URL = os.getenv("INSIGHT_LLM_BASE_URL", "").strip()
+INSIGHT_LLM_MODEL = os.getenv("INSIGHT_LLM_MODEL", "qwen2.5:7b")
+INSIGHT_LLM_TIMEOUT = float(os.getenv("INSIGHT_LLM_TIMEOUT", "90"))
+REPO_DIR =Path(os.getenv("REPO_DIR", Path(__file__).resolve().parents[2]))
 DOCS_DIR = REPO_DIR / "docs"

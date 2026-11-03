@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
-import { Activity, BellRing, BookOpen, Cpu, FlaskConical, GitBranch, LayoutDashboard, LogOut, Settings as Cog, Users, UsersRound, BarChart3, Radio, Watch, Wrench } from "lucide-react";
+import { Activity, BellRing, BookOpen, Bot, Cpu, FlaskConical, GitBranch, LayoutDashboard, LogOut, Settings as Cog, Users, UsersRound, BarChart3, Radio, Watch, Wrench } from "lucide-react";
 import Devices from "./pages/Devices";
 import EngineeringHub from "./pages/EngineeringHub";
 import Lifecycle from "./pages/Lifecycle";
 import KnowledgeHub from "./pages/KnowledgeHub";
+import Insight from "./pages/Insight";
 import { useAuth } from "./lib/auth";
 import { LiveProvider, useLive } from "./lib/live";
 import { useApi } from "./lib/api";
@@ -31,6 +32,7 @@ const NAV = [
   { to: "/staffing", label: "Staffing Insights", icon: UsersRound, perm: "view_analytics", group: "Clinical operations" },
   { to: "/devices", label: "Devices & Integrations", icon: Watch, perm: "view_clinical", group: "Clinical operations" },
   { to: "/simulator", label: "Data Simulator", icon: Cpu, perm: "view_clinical", group: "Clinical operations" },
+  { to: "/insight", label: "CardioInsight (AI)", icon: Bot, perm: "use_insight", group: "AI assistant" },
   { to: "/engineering", label: "Engineering Hub", icon: Wrench, perm: "view_engineering", group: "Engineering leadership" },
   { to: "/lifecycle", label: "Engineering Lifecycle", icon: GitBranch, perm: "view_engineering", group: "Engineering leadership" },
   { to: "/knowledge", label: "Knowledge Hub", icon: BookOpen, perm: "view_knowledge", group: "Engineering leadership" },
@@ -89,7 +91,7 @@ function Shell() {
             </div>
           </div>
           <nav aria-label="Main" className="flex-1 space-y-0.5 overflow-y-auto px-2">
-            {["Clinical operations", "Engineering leadership"].map((group) => {
+            {["Clinical operations", "AI assistant", "Engineering leadership"].map((group) => {
               const items = nav.filter((n) => n.group === group);
               if (!items.length) return null;
               return (
@@ -126,6 +128,7 @@ function Shell() {
           <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/insight" element={<Insight />} />
               <Route path="/engineering" element={<EngineeringHub />} />
               <Route path="/lifecycle" element={<Lifecycle />} />
               <Route path="/knowledge" element={<KnowledgeHub />} />

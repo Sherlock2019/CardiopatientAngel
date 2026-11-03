@@ -66,6 +66,29 @@ The monitoring pipeline is reusable across health IoT products: each device is a
 
 ![Command Center](docs/screenshots/01-command-center.png)
 
+## CardioInsight — governed AI assistant (optional, local PC)
+
+Reuses the SPARC / SCInsight supply-chain stack: **Flowise** front door → **LangGraph** agent manager → **local Qwen**
+(Ollama). Operational questions only (workload, alarm fatigue, devices, data quality, engineering knowledge); never
+diagnosis or treatment. Code computes every number; LLM text with an unverifiable number is withheld; recommendations
+wait for a doctor or admin to approve, then get an outcome check. See [ADR-008](docs/adr/ADR-008-cardioinsight-llm.md).
+
+```text
+Flowise CardioInsight chatflow ─> cardiowatch tool ─> LangGraph: understand ─> safety guard ─> specialist (code)
+   (guardrail · Qwen · memory)                         ─> explain (local Qwen) ─> number check ─> save ─> human approval
+```
+
+```bash
+# .env (local only): point CardioWatch at the supply-chain Ollama relay, then ./start.sh
+INSIGHT_LLM_BASE_URL=http://172.17.0.1:11435/v1
+INSIGHT_LLM_MODEL=qwen2.5:7b
+# deploy the chatflow into the running supply-chain Flowise (:3101)
+FLOWISE_SCI_API_KEY=... python3 scripts/flowise_cardioinsight.py
+```
+
+Without `INSIGHT_LLM_BASE_URL` (e.g. the EC2 demo) the portal's **CardioInsight (AI)** page still works with template
+answers, the same tools and the same approval flow.
+
 ## Start
 
 ```bash
