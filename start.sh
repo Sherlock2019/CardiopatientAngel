@@ -133,6 +133,11 @@ fi
 log "Starting containers…"
 $COMPOSE up -d
 
+# Optional: let an existing Flowise container (supply-chain stack) reach the CardioWatch backend by name.
+if [ -n "${FLOWISE_CONTAINER:-}" ] && $DOCKER inspect "$FLOWISE_CONTAINER" >/dev/null 2>&1; then
+  $DOCKER network connect cardiowatch_default "$FLOWISE_CONTAINER" 2>/dev/null && log "Connected $FLOWISE_CONTAINER to cardiowatch_default" || true
+fi
+
 log "Waiting for the API to become healthy (migrations + synthetic data seeding)…"
 for i in $(seq 1 120); do
   if curl -fs "http://127.0.0.1:${API_PORT:-8010}/health" >/dev/null 2>&1; then break; fi

@@ -80,6 +80,9 @@ def test_outcomes_comparison(client, doctor):
     hf = next(r for r in disease if r["category"] == "Heart failure")
     assert hf["deceased_n"] == 1 and hf["mortality_pct"] == 100.0
     assert any("cannot show what prevents death" in c for c in out["caveats"])
+    signs = {r["category"]: r for r in next(d for d in out["dimensions"] if d["dimension"] == "Signs during stay")["rows"]}
+    assert signs["Fast heart rate"]["deceased_n"] == 1 and signs["Low blood pressure"]["deceased_n"] == 1  # P00001's alarms
+    assert signs["Low oxygen"]["patients"] == 0
 
 
 def test_trends_and_staffing(client, doctor):

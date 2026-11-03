@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bot, CheckCircle2, ChevronRight, Cpu, Send, ShieldAlert, ShieldCheck, TrendingDown, TrendingUp, XCircle } from "lucide-react";
+import { Bot, CheckCircle2, ChevronRight, Cpu, ExternalLink, Send, ShieldAlert, ShieldCheck, TrendingDown, TrendingUp, Workflow, XCircle } from "lucide-react";
 import { api, useApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { fmtTime } from "../lib/format";
@@ -15,6 +15,8 @@ interface AskOut {
   question: string; intent: string | null; specialist: string | null; refused: string | null; answer: string; llm_used: boolean;
   llm_note: string | null; unverified_numbers: string[]; evidence: { metrics?: Record<string, unknown> } | null; recommendations: Rec[]; graph: string[];
 }
+interface FlowiseStatus { configured: boolean; reachable?: boolean; deployed?: boolean; chatflow?: string; chatflow_id?: string | null; ui_url: string | null; note?: string; error?: string }
+interface FlowiseOut { answer: string; chatflow: string; chatflow_id: string; tools_used: string[] }
 interface Health { llm: { status: string; model: string | null; note?: string }; specialists: Record<string, string>; graph: string[] }
 
 const EXAMPLES = [
@@ -91,8 +93,15 @@ export default function Insight() {
   const ask = useMutation({ mutationFn: (question: string) => api<AskOut>("/api/insight/ask", { method: "POST", body: JSON.stringify({ question }) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["insight-recs"] }) });
   const recs = useApi<{ items: Rec[] }>(["insight-recs"], "/api/insight/recommendations", { status });
+  const fstatus = useApi<FlowiseStatus>(["flowise-status"], "/api/insight/flowise/status");
+  const [mode, setMode] = useState<"agent" | "flowise">("agent");
+  const flow = useMutation({ mutationFn: (question: string) => api<FlowiseOut>("/api/insight/flowise/ask", { method: "POST", body: JSON.stringify({ question }) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["insight-recs"] }) });
+  const run = (question: string) => (mode === "flowise" ? flow.mutate(question) : ask.mutate(question));
+  const busy = ask.isPending || flow.isPending;
+  const fs = fstatus.data;
   const h = health.data;
-  const r = ask.data;
+  const r = mode === "agent" ? ask.data : undefined;
   const reached = !r ? 0 : r.refused ? 2 : 6;
 
   return (
@@ -109,16 +118,37 @@ export default function Insight() {
       <Note tone="warn">Operational only. CardioInsight never diagnoses, suggests treatment or medication, or discusses individual patients. Code calculates every number; the LLM only explains, and any number it cannot trace to the tool output is withheld. Recommendations need human approval.</Note>
 
       <Card>
-        <CardHeader title="Ask" subtitle={h ? <GraphStrip nodes={h.graph} reached={reached} /> : undefined} />
+        <CardHeader title="Ask" subtitle={mode === "agent"
+          ? (h ? <GraphStrip nodes={h.graph} reached={reached} /> : undefined)
+          : <span className="text-[11px]">Flowise chatflow: input guardrail → Qwen → memory → Tool Agent → CardioWatch tool → the agent graph above</span>}
+          right={
+            <>
+              <Segmented label="Ask via" value={mode} onChange={setMode} options={[{ value: "agent", label: "CardioWatch agent (LangGraph)" }, { value: "flowise", label: "Flowise chatflow" }]} />
+              {fs?.ui_url && <a className="inline-flex items-center gap-1 text-xs text-brand-dark hover:underline" href={fs.chatflow_id ? `${fs.ui_url}/canvas/${fs.chatflow_id}` : fs.ui_url} target="_blank" rel="noreferrer"><Workflow size={13} /> Open in Flowise <ExternalLink size={11} /></a>}
+            </>
+          } />
         <div className="space-y-3 p-4">
-          <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); ask.mutate(q); }}>
+          {mode === "flowise" && fs && (!fs.configured || !fs.reachable || !fs.deployed) && (
+            <Note tone="warn">{!fs.configured ? fs.note : !fs.reachable ? `Flowise not reachable from CardioWatch (${fs.error}).` : "The CardioInsight chatflow is not deployed yet: run scripts/flowise_cardioinsight.py."}</Note>
+          )}
+          <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); run(q); }}>
             <label htmlFor="insight-q" className="sr-only">Question</label>
             <input id="insight-q" value={q} onChange={(e) => setQ(e.target.value)} maxLength={500} className="h-10 flex-1 rounded-md border border-black/15 bg-white px-3 text-sm" />
-            <Button variant="primary" disabled={ask.isPending || q.length < 3}><Send size={14} /> {ask.isPending ? "Thinking…" : "Ask"}</Button>
+            <Button variant="primary" disabled={busy || q.length < 3}><Send size={14} /> {busy ? "Thinking…" : "Ask"}</Button>
           </form>
-          <div className="flex flex-wrap gap-1">{EXAMPLES.map((e) => <button key={e} onClick={() => { setQ(e); ask.mutate(e); }} className="rounded-full border border-black/15 bg-white px-2 py-0.5 text-[11px] text-ink-2 hover:bg-brand-soft">{e}</button>)}</div>
-          {ask.isPending && <p className="text-xs text-muted">Running the agent graph{h?.llm.status === "up" ? " — the local model can take 10–30 s on CPU" : ""}…</p>}
-          {ask.error && <p role="alert" className="text-xs text-crit">{(ask.error as Error).message}</p>}
+          <div className="flex flex-wrap gap-1">{EXAMPLES.map((e) => <button key={e} onClick={() => { setQ(e); run(e); }} className="rounded-full border border-black/15 bg-white px-2 py-0.5 text-[11px] text-ink-2 hover:bg-brand-soft">{e}</button>)}</div>
+          {busy && <p className="text-xs text-muted">{mode === "flowise" ? "Flowise is running the chatflow (Qwen + tool call) — this can take 20–60 s on CPU…" : `Running the agent graph${h?.llm.status === "up" ? " — the local model can take 10–30 s on CPU" : ""}…`}</p>}
+          {(mode === "agent" ? ask.error : flow.error) && <p role="alert" className="text-xs text-crit">{((mode === "agent" ? ask.error : flow.error) as Error).message}</p>}
+          {mode === "flowise" && flow.data && (
+            <div className="space-y-2 rounded-lg border border-black/10 bg-white p-4">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <Badge className="border-brand/30 bg-brand-soft text-brand-dark"><Workflow size={12} /> via Flowise · {flow.data.chatflow}</Badge>
+                {flow.data.tools_used.length > 0 && <Badge className="border-good/40 bg-good/5 text-good-text">tool called: {flow.data.tools_used.join(", ")}</Badge>}
+              </div>
+              <p className="whitespace-pre-line text-sm text-ink">{flow.data.answer}</p>
+              <p className="text-[11px] text-muted">Recommendations created through Flowise appear in the log below, awaiting human approval.</p>
+            </div>
+          )}
           {r && (
             <div className="space-y-3 rounded-lg border border-black/10 bg-white p-4">
               <div className="flex flex-wrap items-center gap-2 text-xs">

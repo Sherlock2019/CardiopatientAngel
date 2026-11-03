@@ -1,11 +1,12 @@
 import { useEffect } from "react";
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
-import { Activity, BellRing, BookOpen, Bot, Cpu, FlaskConical, GitBranch, LayoutDashboard, LogOut, Settings as Cog, Users, UsersRound, BarChart3, Radio, Watch, Wrench } from "lucide-react";
+import { Activity, BellRing, BookOpen, Bot, ExternalLink, PieChart as PieIcon, Workflow, Cpu, FlaskConical, GitBranch, LayoutDashboard, LogOut, Settings as Cog, Users, UsersRound, BarChart3, Radio, Watch, Wrench } from "lucide-react";
 import Devices from "./pages/Devices";
 import EngineeringHub from "./pages/EngineeringHub";
 import Lifecycle from "./pages/Lifecycle";
 import KnowledgeHub from "./pages/KnowledgeHub";
 import Insight from "./pages/Insight";
+import Outcomes from "./pages/Outcomes";
 import { useAuth } from "./lib/auth";
 import { LiveProvider, useLive } from "./lib/live";
 import { useApi } from "./lib/api";
@@ -28,6 +29,7 @@ const NAV = [
   { to: "/patients", label: "Patients", icon: Users, perm: "view_clinical", group: "Clinical operations" },
   { to: "/alarms", label: "Live Alarms", icon: BellRing, perm: "view_clinical", group: "Clinical operations" },
   { to: "/analytics", label: "Risk Analytics", icon: BarChart3, perm: "view_analytics", group: "Clinical operations" },
+  { to: "/outcomes", label: "Outcomes", icon: PieIcon, perm: "view_analytics", group: "Clinical operations" },
   { to: "/cohorts", label: "Cohort Explorer", icon: FlaskConical, perm: "view_analytics", group: "Clinical operations" },
   { to: "/staffing", label: "Staffing Insights", icon: UsersRound, perm: "view_analytics", group: "Clinical operations" },
   { to: "/devices", label: "Devices & Integrations", icon: Watch, perm: "view_clinical", group: "Clinical operations" },
@@ -71,6 +73,7 @@ function LiveDot() {
 function Shell() {
   const { user, logout, can } = useAuth();
   const nav = NAV.filter((n) => can(n.perm));
+  const meta = useMeta();
   const settings = useApi<{ display_timezone: string }>(["settings"], "/api/settings");
   useEffect(() => {
     if (settings.data) setDisplayTz(settings.data.display_timezone);
@@ -102,6 +105,11 @@ function Shell() {
                       <Icon size={16} aria-hidden /> {label}
                     </NavLink>
                   ))}
+                  {group === "AI assistant" && meta.data?.flowise_ui_url && (
+                    <a href={meta.data.flowise_ui_url} target="_blank" rel="noreferrer" className="flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm text-ink-2 hover:bg-black/5">
+                      <Workflow size={16} aria-hidden /> Flowise flows <ExternalLink size={12} aria-hidden />
+                    </a>
+                  )}
                 </div>
               );
             })}
@@ -129,6 +137,7 @@ function Shell() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/insight" element={<Insight />} />
+              <Route path="/outcomes" element={<Outcomes />} />
               <Route path="/engineering" element={<EngineeringHub />} />
               <Route path="/lifecycle" element={<Lifecycle />} />
               <Route path="/knowledge" element={<KnowledgeHub />} />

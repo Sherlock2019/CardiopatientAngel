@@ -3,6 +3,7 @@ import json
 from datetime import datetime, timezone
 from typing import Literal
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -11,6 +12,7 @@ from sqlalchemy.orm import Session
 from . import audit, insight
 from . import knowledge as kb
 from .auth import User, require
+from .config import FLOWISE_API_KEY, FLOWISE_CHATFLOW, FLOWISE_UI_URL, FLOWISE_URL
 from .db import get_db
 from .models import InsightRecommendation
 
@@ -51,6 +53,51 @@ def ask(body: AskIn, db: Session = Depends(get_db), user: User = Depends(asker))
     ids = result["recommendation_ids"]
     recs = db.execute(select(InsightRecommendation).where(InsightRecommendation.rec_id.in_(ids))).scalars().all() if ids else []
     return {**result, "recommendations": [_rec(r) for r in recs]}
+
+
+def _flowise(method: str, path: str, body: dict | None = None, timeout: float = 15) -> dict | list:
+    r = httpx.request(method, f"{FLOWISE_URL}{path}", json=body, timeout=timeout,
+                      headers={"Authorization": f"Bearer {FLOWISE_API_KEY}"})
+    r.raise_for_status()
+    return r.json()
+
+
+def _flowise_flow_id() -> str | None:
+    rows = _flowise("GET", "/api/v1/chatflows")
+    return next((row["id"] for row in rows if row["name"] == FLOWISE_CHATFLOW), None)
+
+
+@router.get("/flowise/status")
+def flowise_status(user: User = Depends(asker)):
+    if not (FLOWISE_URL and FLOWISE_API_KEY):
+        return {"configured": False, "ui_url": FLOWISE_UI_URL or None,
+                "note": "Set FLOWISE_URL, FLOWISE_API_KEY (and FLOWISE_UI_URL) in .env to use the Flowise chatflow."}
+    try:
+        fid = _flowise_flow_id()
+        return {"configured": True, "reachable": True, "chatflow": FLOWISE_CHATFLOW, "chatflow_id": fid, "ui_url": FLOWISE_UI_URL or None,
+                "deployed": fid is not None}
+    except Exception as exc:  # noqa: BLE001
+        return {"configured": True, "reachable": False, "error": type(exc).__name__, "ui_url": FLOWISE_UI_URL or None}
+
+
+@router.post("/flowise/ask")
+def flowise_ask(body: AskIn, db: Session = Depends(get_db), user: User = Depends(asker)):
+    """Ask the Flowise CardioInsight chatflow (guardrail -> Qwen -> Tool Agent -> CardioWatch tool). Key never reaches the browser."""
+    if not (FLOWISE_URL and FLOWISE_API_KEY):
+        raise HTTPException(503, "Flowise is not configured for this deployment")
+    try:
+        fid = _flowise_flow_id()
+        if not fid:
+            raise HTTPException(503, f"Chatflow {FLOWISE_CHATFLOW} is not deployed (run scripts/flowise_cardioinsight.py)")
+        res = _flowise("POST", f"/api/v1/prediction/{fid}", {"question": body.question}, timeout=240)
+    except HTTPException:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(502, f"Flowise call failed ({type(exc).__name__})")
+    audit.record(db, user, "insight_flowise_ask", "insight", "flowise", f"q={kb.redact(body.question)[0][:200]}")
+    db.commit()
+    return {"answer": res.get("text") if isinstance(res, dict) else str(res), "chatflow": FLOWISE_CHATFLOW, "chatflow_id": fid,
+            "tools_used": [t.get("tool") for t in (res.get("usedTools") or [])] if isinstance(res, dict) else []}
 
 
 @router.get("/recommendations")

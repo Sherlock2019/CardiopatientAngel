@@ -81,6 +81,7 @@ def meta():
         "device_info": d.DEVICE_INFO,
         "technical_alarms": sorted(d.TECHNICAL_ALARMS),
         "mobile_port": int(os.getenv("MOBILE_PORT", "8081")),
+        "flowise_ui_url": os.getenv("FLOWISE_UI_URL") or None,
     }
 
 

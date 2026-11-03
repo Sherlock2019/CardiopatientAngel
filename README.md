@@ -84,6 +84,11 @@ INSIGHT_LLM_BASE_URL=http://172.17.0.1:11435/v1
 INSIGHT_LLM_MODEL=qwen2.5:7b
 # deploy the chatflow into the running supply-chain Flowise (:3101)
 FLOWISE_SCI_API_KEY=... python3 scripts/flowise_cardioinsight.py
+# let the portal use it too ("Ask via Flowise" + sidebar link); the key stays server-side
+FLOWISE_URL=http://aurelia-scm-flowise-1:3000
+FLOWISE_UI_URL=http://localhost:3101
+FLOWISE_API_KEY=...            # the SCInsight key
+FLOWISE_CONTAINER=aurelia-scm-flowise-1   # start.sh connects it to the CardioWatch network
 ```
 
 Without `INSIGHT_LLM_BASE_URL` (e.g. the EC2 demo) the portal's **CardioInsight (AI)** page still works with template

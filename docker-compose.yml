@@ -35,6 +35,10 @@ services:
       # CardioInsight LLM (optional, local PC): OpenAI-compatible endpoint, e.g. the supply-chain Ollama relay
       INSIGHT_LLM_BASE_URL: ${INSIGHT_LLM_BASE_URL:-}
       INSIGHT_LLM_MODEL: ${INSIGHT_LLM_MODEL:-qwen2.5:7b}
+      # Flowise CardioInsight chatflow (optional): internal URL, browser URL, API key (server-side only)
+      FLOWISE_URL: ${FLOWISE_URL:-}
+      FLOWISE_UI_URL: ${FLOWISE_UI_URL:-}
+      FLOWISE_API_KEY: ${FLOWISE_API_KEY:-}
     volumes:
       # read-only repository view for the Engineering Hub (docs, ADRs, test evidence, source traceability)
       - ./docs:/repo/docs:ro

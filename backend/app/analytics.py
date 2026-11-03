@@ -574,6 +574,13 @@ OUTCOME_CAVEATS = [
 ]
 
 
+# Monitored signs a patient showed during the stay, from clinical alarm types (technical alarms excluded).
+SIGN_LABELS = {
+    "HR high": "Fast heart rate", "HR low": "Slow heart rate", "SpO2 low": "Low oxygen", "BP low": "Low blood pressure",
+    "BP high": "High blood pressure", "Irregular rhythm": "Irregular rhythm", "Fall detected": "Fall",
+}
+
+
 def _wilson(k: int, n: int, z: float = 1.96) -> tuple[float | None, float | None]:
     if n == 0:
         return None, None
@@ -611,10 +618,12 @@ def outcomes(F: Frames, w: Window, units=None) -> dict:
         "Care unit": p[["patient_id", "care_unit"]].rename(columns={"care_unit": "key"}),
         "Sex": p[["patient_id", "sex"]].assign(sex=lambda x: x["sex"].map({"F": "Female", "M": "Male"})).rename(columns={"sex": "key"}),
         "Critical alarms during stay": p[["patient_id", "critical_bucket"]].rename(columns={"critical_bucket": "key"}),
+        "Signs during stay": a[a["alarm_type"].isin(list(SIGN_LABELS))][["patient_id", "alarm_type"]]
+            .assign(key=lambda x: x["alarm_type"].map(SIGN_LABELS))[["patient_id", "key"]].drop_duplicates(),
     }
     order = {"Age group": d.AGE_GROUPS, "Disease": list(d.PATHOLOGIES), "Treatment": d.TREATMENTS,
              "Medication class": d.MEDICATION_CLASSES, "Care unit": d.CARE_UNITS, "Sex": ["Female", "Male"],
-             "Critical alarms during stay": ["0", "1–2", "3+"]}
+             "Critical alarms during stay": ["0", "1–2", "3+"], "Signs during stay": list(SIGN_LABELS.values())}
     n_dec, n_alive = int(p["deceased"].sum()), int((~p["deceased"]).sum())
     small = settings_store.get()["small_cohort_patients"]
     dims = []

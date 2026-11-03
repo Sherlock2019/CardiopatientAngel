@@ -27,6 +27,7 @@ export interface Meta {
   device_info: Record<string, { model: string; connectivity: string; signals: string[]; alarms: string[]; offline_after_min: number }>;
   technical_alarms: string[];
   mobile_port: number;
+  flowise_ui_url: string | null;
 }
 
 export interface AttentionFactor {
