@@ -1,0 +1,49 @@
+name: cardiowatch
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cardiowatch
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cardiowatch}
+      POSTGRES_DB: cardiowatch
+    ports:
+      - "127.0.0.1:55440:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cardiowatch -d cardiowatch"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://cardiowatch:${POSTGRES_PASSWORD:-cardiowatch}@db:5432/cardiowatch
+      SECRET_KEY: ${SECRET_KEY:-dev-only-insecure-secret-change-me}
+      CORS_ORIGINS: http://localhost:5180
+      HOSPITAL_TZ: ${HOSPITAL_TZ:-America/New_York}
+      SEED_RANDOM: ${SEED_RANDOM:-42}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8010:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:5180:80"
+
+volumes:
+  pgdata:
