@@ -170,6 +170,14 @@ cat <<EOF
   Demo accounts are on the login screen (no passwords).
   Stop: ./start.sh --stop   Logs: ./start.sh --logs   Reset data: ./start.sh --reset-data
 EOF
+if [ -n "${FLOWISE_UI_URL:-}" ]; then
+  if [ -n "${FLOWISE_CONTAINER:-}" ] && $DOCKER inspect "$FLOWISE_CONTAINER" >/dev/null 2>&1; then
+    echo "  Flowise (shared supply-chain)      ${FLOWISE_UI_URL}   chatflow: ${FLOWISE_CHATFLOW:-CardioInsight-Operations-Chatflow-v1}"
+  else
+    echo "  Flowise not running: start the supply-chain stack (${FLOWISE_CONTAINER:-flowise}), then ./start.sh again"
+  fi
+  echo
+fi
 if [ "$BIND_ADDR" = "0.0.0.0" ]; then
   cat <<EOF
 
