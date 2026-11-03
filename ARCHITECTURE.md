@@ -1,5 +1,11 @@
 # Architecture
 
+Diagrams (product ecosystem, application & FHIR integration layers with the five workflows, AWS deployment,
+cardiac data pipeline, HIPAA essentials): open [docs/architecture.html](docs/architecture.html) in a browser.
+Re-render the figure PNGs with `cd frontend && node e2e/shot-architecture.mjs`.
+
+![Application & integration architecture](docs/screenshots/arch-2-integration.png)
+
 ```
  device simulator ─┐                                   ┌─ REST (JSON) ──► React SPA (Vite build, nginx)
  ingest API ───────┼─► validation ─► PostgreSQL ─► analytics (pandas, cached) ─┤

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardioWatch AI — architecture, integration &amp; HIPAA</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #fcfcfb; --plane: #f3f6fa; --ink: #0b0b0b; --ink2: #52514e; --muted: #6f6d68;
+    --box: #ffffff; --zone: #eef4fc; --line: #c3c2b7; --acc: #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1a1a19; --plane: #0d0d0d; --ink: #f0efec; --ink2: #c3c2b7; --muted: #9a988f;
+            --box: #232322; --zone: #16202c; --line: #383835; --acc: #5598e7; }
+  }
+  body { margin: 0; background: var(--plane); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1240px; margin: 0 auto; padding: 32px 20px 56px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  .lede { color: var(--ink2); margin: 0 0 20px; max-width: 820px; }
+  figure { margin: 0; background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  svg { display: block; width: 100%; height: auto; color: var(--ink); }
+  figcaption { color: var(--ink2); font-size: 13.5px; margin-top: 10px; }
+  /* SVG classes (styled from the page; no <style> inside the SVG) */
+  .box { fill: var(--box); stroke: currentColor; stroke-width: 1.4; }
+  .zone { fill: var(--zone); stroke: var(--acc); stroke-width: 1.4; stroke-dasharray: 7 5; }
+  .bar { fill: var(--zone); stroke: currentColor; stroke-width: 1.2; }
+  .t { font: 600 14px system-ui, sans-serif; fill: currentColor; }
+  .s { font: 11.5px system-ui, sans-serif; fill: var(--ink2); }
+  .z { font: 600 12.5px system-ui, sans-serif; fill: var(--acc); }
+  .l { font: 11.5px system-ui, sans-serif; fill: var(--ink2); paint-order: stroke; stroke: var(--bg); stroke-width: 5px; stroke-linejoin: round; }
+  .w { stroke: currentColor; stroke-width: 1.6; fill: none; }
+  .a { stroke: var(--acc); stroke-width: 2.4; fill: none; }
+  .d { stroke: var(--muted); stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; }
+  .mk { fill: currentColor; } .mka { fill: var(--acc); } .mkd { fill: var(--muted); }
+  .tag { fill: var(--acc); } .tagt { font: 600 10px system-ui, sans-serif; fill: #fff; }
+  h2 { font-size: 17px; margin: 32px 0 8px; }
+  table { width: 100%; border-collapse: collapse; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--ink2); font-weight: 600; font-size: 13px; }
+  tr:last-child td { border-bottom: 0; }
+  code { font-size: 12.5px; background: var(--zone); padding: 1px 5px; border-radius: 4px; }
+  ul { padding-left: 20px; } li { margin: 4px 0; }
+  .note { color: var(--muted); font-size: 13px; margin-top: 28px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>CardioWatch AI: product ecosystem</h1>
+  <p class="lede">The whole environment at a glance: two audiences, one secure backend, and two capability areas that feed it. The sections below zoom into each layer.</p>
+
+  <figure>
+    <svg viewBox="0 0 900 440" role="img" aria-label="Product ecosystem: older adults use a mobile coaching app and doctors or care teams use a clinical web portal; both connect to a secure healthcare backend on AWS with APIs and patient data; the backend connects to cardiac integration with devices, EHR and APIs, and to AI and analytics producing clinician-reviewed insights.">
+      <rect class="box" x="60" y="30" width="300" height="104" rx="14"/>
+      <text class="t" x="210" y="70" text-anchor="middle" style="font-size:17px">Older adults</text>
+      <text class="s" x="210" y="94" text-anchor="middle" style="font-size:13px">Mobile coaching app</text>
+      <text class="s" x="210" y="114" text-anchor="middle">planned · React Native</text>
+
+      <rect class="box" x="540" y="30" width="300" height="104" rx="14"/>
+      <text class="t" x="690" y="70" text-anchor="middle" style="font-size:17px">Doctors / care teams</text>
+      <text class="s" x="690" y="94" text-anchor="middle" style="font-size:13px">Clinical web portal</text>
+      <text class="s" x="690" y="114" text-anchor="middle">built in POC · React + TypeScript</text>
+
+      <rect class="zone" x="250" y="172" width="400" height="96" rx="14" style="stroke-dasharray:none;stroke-width:2"/>
+      <text class="t" x="450" y="210" text-anchor="middle" style="font-size:17px">Secure healthcare backend</text>
+      <text class="s" x="450" y="234" text-anchor="middle" style="font-size:13px">AWS · APIs · patient data</text>
+      <text class="s" x="450" y="253" text-anchor="middle">built in POC · FastAPI + PostgreSQL</text>
+
+      <rect class="box" x="60" y="306" width="300" height="104" rx="14"/>
+      <text class="t" x="210" y="346" text-anchor="middle" style="font-size:17px">Cardiac integration</text>
+      <text class="s" x="210" y="370" text-anchor="middle" style="font-size:13px">Devices / EHR / APIs</text>
+      <text class="s" x="210" y="390" text-anchor="middle">simulated in POC · FHIR planned</text>
+
+      <rect class="box" x="540" y="306" width="300" height="104" rx="14"/>
+      <text class="t" x="690" y="346" text-anchor="middle" style="font-size:17px">AI + analytics</text>
+      <text class="s" x="690" y="370" text-anchor="middle" style="font-size:13px">Insights / recommendations</text>
+      <text class="s" x="690" y="390" text-anchor="middle">descriptive in POC · clinician-reviewed</text>
+
+      <polyline class="a" points="210,134 210,153 330,153 330,170" marker-end="url(#arwA)"/>
+      <polyline class="a" points="690,134 690,153 570,153 570,170" marker-start="url(#arwA)"/>
+      <polyline class="a" points="330,270 330,287 210,287 210,304" marker-start="url(#arwA)"/>
+      <polyline class="w" points="570,270 570,287 690,287 690,304" marker-end="url(#arw)"/>
+      <text class="l" x="222" y="150">check-ins · coaching</text>
+      <text class="l" x="678" y="150" text-anchor="end">alerts · trends</text>
+      <text class="l" x="222" y="302">device &amp; EHR data</text>
+      <text class="l" x="678" y="302" text-anchor="end">de-identified data</text>
+    </svg>
+    <figcaption>Illustrative ecosystem for the portfolio product. AI and analytics only produce insights for clinicians to review; they never send
+      recommendations straight to patients or make clinical decisions.</figcaption>
+  </figure>
+
+  <h1 style="margin-top:48px">Application &amp; integration architecture</h1>
+  <p class="lede">Frontend, API and backend layers, with a FHIR facade so the platform plugs into existing medical systems instead of replacing them.
+    The numbered arrows are the five core workflows, described under the figure.</p>
+
+  <figure>
+    <svg viewBox="0 0 1240 720" role="img" aria-label="Layered architecture. Frontend: patient mobile app, doctor and care-team portal, and third-party SMART on FHIR apps. These call an API gateway with OAuth, OIDC and SMART scopes, which fronts a FastAPI REST API and a FHIR R4 API. The backend in a private VPC holds domain services, PostgreSQL, SQS workers and encrypted S3. An integration layer acting as a FHIR facade, with resource router, mapping engine, legacy adapters and consent and provenance, connects to existing systems: hospital EHR, monitors and wearables, lab and pharmacy, and health information exchanges.">
+      <defs>
+        <marker id="iarw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk" d="M0 0 L10 5 L0 10 z"/></marker>
+        <marker id="iarwA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="mka" d="M0 0 L10 5 L0 10 z"/></marker>
+        <marker id="iarwD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mkd" d="M0 0 L10 5 L0 10 z"/></marker>
+      </defs>
+
+      <!-- layer labels -->
+      <text class="z" x="40" y="34">FRONTEND</text>
+      <text class="z" x="40" y="190">API LAYER</text>
+      <text class="z" x="835" y="190">INTEGRATION · FHIR FACADE</text>
+      <text class="z" x="1062" y="190">EXISTING SYSTEMS</text>
+
+      <!-- Frontend -->
+      <rect class="box" x="40" y="46" width="230" height="100" rx="10"/>
+      <text class="t" x="155" y="74" text-anchor="middle">Patient mobile app</text>
+      <text class="s" x="155" y="94" text-anchor="middle">React Native + TypeScript</text>
+      <text class="s" x="155" y="111" text-anchor="middle">check-ins · metrics · reminders</text>
+      <text class="s" x="155" y="128" text-anchor="middle">accessible · offline sync</text>
+
+      <rect class="box" x="300" y="46" width="230" height="100" rx="10"/>
+      <text class="t" x="400" y="74" text-anchor="middle">Care-team portal</text>
+      <text class="s" x="415" y="94" text-anchor="middle">React + TypeScript · doctors, nurses</text>
+      <text class="s" x="415" y="111" text-anchor="middle">patient lists · cardiac trends</text>
+      <text class="s" x="415" y="128" text-anchor="middle">alerts · role-based permissions</text>
+      <rect class="tag" x="484" y="52" width="38" height="16" rx="8"/><text class="tagt" x="503" y="64" text-anchor="middle">POC</text>
+
+      <rect class="box" x="560" y="46" width="220" height="100" rx="10" style="stroke-dasharray:6 4"/>
+      <text class="t" x="670" y="74" text-anchor="middle">Plug-in apps</text>
+      <text class="s" x="670" y="94" text-anchor="middle">SMART on FHIR apps</text>
+      <text class="s" x="670" y="111" text-anchor="middle">EHR-embedded views</text>
+      <text class="s" x="670" y="128" text-anchor="middle">partner analytics</text>
+
+      <!-- API layer -->
+      <rect class="box" x="40" y="200" width="740" height="56" rx="10"/>
+      <text class="t" x="410" y="224" text-anchor="middle">API gateway / ALB  +  identity provider</text>
+      <text class="s" x="410" y="243" text-anchor="middle">TLS · OAuth 2.0 / OIDC · MFA · SMART on FHIR scopes · rate limiting</text>
+
+      <rect class="box" x="40" y="300" width="360" height="96" rx="10"/>
+      <text class="t" x="220" y="328" text-anchor="middle">FastAPI REST API</text>
+      <text class="s" x="220" y="348" text-anchor="middle">OpenAPI contract · input validation</text>
+      <text class="s" x="220" y="365" text-anchor="middle">server-side RBAC · SSE live alerts</text>
+      <text class="s" x="220" y="382" text-anchor="middle">used by the app and the portal</text>
+      <rect class="tag" x="354" y="306" width="38" height="16" rx="8"/><text class="tagt" x="373" y="318" text-anchor="middle">POC</text>
+
+      <rect class="box" x="420" y="300" width="360" height="96" rx="10"/>
+      <text class="t" x="600" y="328" text-anchor="middle">FHIR R4 API</text>
+      <text class="s" x="600" y="348" text-anchor="middle">Patient · Observation · Condition</text>
+      <text class="s" x="600" y="365" text-anchor="middle">MedicationStatement · CarePlan</text>
+      <text class="s" x="600" y="382" text-anchor="middle">standard interface for plug-ins</text>
+
+      <!-- Backend -->
+      <rect class="zone" x="24" y="432" width="772" height="270" rx="14"/>
+      <text class="z" x="780" y="456" text-anchor="end">BACKEND · PRIVATE VPC</text>
+
+      <rect class="box" x="40" y="470" width="230" height="100" rx="10"/>
+      <text class="t" x="140" y="498" text-anchor="middle">Domain services</text>
+      <text class="s" x="155" y="518" text-anchor="middle">check-ins · observations</text>
+      <text class="s" x="155" y="535" text-anchor="middle">alert rules · care plans</text>
+      <text class="s" x="155" y="552" text-anchor="middle">analytics · audit</text>
+      <rect class="tag" x="224" y="476" width="38" height="16" rx="8"/><text class="tagt" x="243" y="488" text-anchor="middle">POC</text>
+
+      <rect class="box" x="300" y="470" width="220" height="100" rx="10"/>
+      <text class="t" x="395" y="498" text-anchor="middle">PostgreSQL</text>
+      <text class="s" x="410" y="518" text-anchor="middle">clinical store (Amazon RDS)</text>
+      <text class="s" x="410" y="535" text-anchor="middle">audit log · encrypted</text>
+      <text class="s" x="410" y="552" text-anchor="middle">Multi-AZ backups</text>
+      <rect class="tag" x="474" y="476" width="38" height="16" rx="8"/><text class="tagt" x="493" y="488" text-anchor="middle">POC</text>
+
+      <rect class="box" x="550" y="470" width="230" height="100" rx="10"/>
+      <text class="t" x="665" y="498" text-anchor="middle">SQS + workers</text>
+      <text class="s" x="665" y="518" text-anchor="middle">normalize · deduplicate</text>
+      <text class="s" x="665" y="535" text-anchor="middle">retry · dead-letter queue</text>
+      <text class="s" x="665" y="552" text-anchor="middle">alert evaluation · reminders</text>
+
+      <rect class="box" x="550" y="606" width="230" height="72" rx="10"/>
+      <text class="t" x="665" y="634" text-anchor="middle">Amazon S3 (encrypted)</text>
+      <text class="s" x="665" y="654" text-anchor="middle">exports · audit archive</text>
+
+      <!-- Integration layer (FHIR facade) -->
+      <rect class="zone" x="820" y="200" width="214" height="502" rx="14"/>
+      <rect class="box" x="835" y="214" width="184" height="72" rx="10"/>
+      <text class="t" x="927" y="243" text-anchor="middle">Resource router</text>
+      <text class="s" x="927" y="263" text-anchor="middle">per resource, per source</text>
+
+      <rect class="box" x="835" y="322" width="184" height="96" rx="10"/>
+      <text class="t" x="927" y="350" text-anchor="middle">Mapping engine</text>
+      <text class="s" x="927" y="370" text-anchor="middle">FHIR ↔ internal model</text>
+      <text class="s" x="927" y="387" text-anchor="middle">LOINC · SNOMED CT</text>
+      <text class="s" x="927" y="404" text-anchor="middle">UCUM units</text>
+
+      <rect class="box" x="835" y="470" width="184" height="100" rx="10"/>
+      <text class="t" x="927" y="498" text-anchor="middle">Legacy adapters</text>
+      <text class="s" x="927" y="518" text-anchor="middle">HL7 v2 · CSV / SFTP</text>
+      <text class="s" x="927" y="535" text-anchor="middle">device gateways</text>
+      <text class="s" x="927" y="552" text-anchor="middle">one adapter per source</text>
+
+      <rect class="box" x="835" y="606" width="184" height="72" rx="10"/>
+      <text class="t" x="927" y="634" text-anchor="middle">Consent · provenance</text>
+      <text class="s" x="927" y="654" text-anchor="middle">audited per exchange</text>
+
+      <!-- Existing medical systems -->
+      <rect class="box" x="1062" y="214" width="164" height="72" rx="10" style="stroke-dasharray:6 4"/>
+      <text class="t" x="1144" y="243" text-anchor="middle">Hospital EHR</text>
+      <text class="s" x="1144" y="263" text-anchor="middle">FHIR R4 · SMART</text>
+      <rect class="box" x="1062" y="334" width="164" height="72" rx="10" style="stroke-dasharray:6 4"/>
+      <text class="t" x="1144" y="363" text-anchor="middle">Cardiac devices</text>
+      <text class="s" x="1144" y="383" text-anchor="middle">monitors · wearables</text>
+      <rect class="box" x="1062" y="484" width="164" height="72" rx="10" style="stroke-dasharray:6 4"/>
+      <text class="t" x="1144" y="513" text-anchor="middle">Lab · pharmacy</text>
+      <text class="s" x="1144" y="533" text-anchor="middle">HL7 v2 feeds</text>
+      <rect class="box" x="1062" y="606" width="164" height="72" rx="10" style="stroke-dasharray:6 4"/>
+      <text class="t" x="1144" y="635" text-anchor="middle">HIE · registries</text>
+      <text class="s" x="1144" y="655" text-anchor="middle">regional exchange</text>
+
+      <!-- Frontend -> gateway -->
+      <line class="a" x1="155" y1="146" x2="155" y2="197" marker-end="url(#iarwA)"/>
+      <line class="a" x1="415" y1="149" x2="415" y2="197" marker-start="url(#iarwA)" marker-end="url(#iarwA)"/>
+      <line class="d" x1="670" y1="146" x2="670" y2="197" marker-end="url(#iarwD)"/>
+      <!-- gateway -> APIs -->
+      <line class="w" x1="220" y1="259" x2="220" y2="297" marker-start="url(#iarw)" marker-end="url(#iarw)"/>
+      <line class="w" x1="600" y1="259" x2="600" y2="297" marker-start="url(#iarw)" marker-end="url(#iarw)"/>
+      <!-- APIs -> backend -->
+      <line class="w" x1="155" y1="399" x2="155" y2="467" marker-start="url(#iarw)" marker-end="url(#iarw)"/>
+      <text class="l" x="167" y="422">commands · queries</text>
+      <line class="w" x1="780" y1="358" x2="832" y2="358" marker-start="url(#iarw)" marker-end="url(#iarw)"/>
+      <line class="w" x1="270" y1="520" x2="297" y2="520" marker-end="url(#iarw)"/>
+      <line class="a" x1="550" y1="520" x2="523" y2="520" marker-end="url(#iarwA)"/>
+      <line class="w" x1="665" y1="570" x2="665" y2="603" marker-end="url(#iarw)"/>
+      <!-- facade internals -->
+      <line class="w" x1="927" y1="286" x2="927" y2="319" marker-end="url(#iarw)"/>
+      <line class="w" x1="927" y1="467" x2="927" y2="421" marker-end="url(#iarw)"/>
+      <!-- facade -> backend queue -->
+      <line class="a" x1="833" y1="520" x2="783" y2="520" marker-end="url(#iarwA)"/>
+      <!-- existing systems -> facade -->
+      <line class="w" x1="1059" y1="250" x2="1022" y2="250" marker-start="url(#iarw)" marker-end="url(#iarw)"/>
+      <line class="a" x1="1059" y1="384" x2="1022" y2="492" marker-end="url(#iarwA)"/>
+      <line class="w" x1="1059" y1="520" x2="1022" y2="520" marker-end="url(#iarw)"/>
+      <line class="w" x1="1059" y1="642" x2="1022" y2="642" marker-start="url(#iarw)" marker-end="url(#iarw)"/>
+
+      <!-- workflow numbers -->
+      <circle class="tag" cx="155" cy="172" r="10"/><text class="tagt" x="155" y="176" text-anchor="middle">1</text>
+      <circle class="tag" cx="415" cy="172" r="10"/><text class="tagt" x="415" y="176" text-anchor="middle">2</text>
+      <circle class="tag" cx="670" cy="172" r="10"/><text class="tagt" x="670" y="176" text-anchor="middle">3</text>
+      <circle class="tag" cx="1040" cy="236" r="10"/><text class="tagt" x="1040" y="240" text-anchor="middle">4</text>
+      <circle class="tag" cx="1046" cy="430" r="10"/><text class="tagt" x="1046" y="434" text-anchor="middle">5</text>
+    </svg>
+    <figcaption>The portal and the mobile app use the platform's own REST API. Anything outside the platform (EHRs, devices, labs, exchanges, third-party
+      apps) connects through standard FHIR R4 or through a dedicated adapter, so plugging in a new hospital system means adding a mapping or an
+      adapter, not changing the core. Dashed boxes are external systems or optional plug-ins. Blue arrows carry patient and device data.</figcaption>
+  </figure>
+
+  <h2>The five workflows</h2>
+  <table>
+    <tbody>
+      <tr><td style="width:44px"><b>①</b></td><td><b>Daily check-in.</b> The patient app saves answers and metrics offline, syncs when online, and calls the REST API; domain services store observations and evaluate approved alert rules.</td></tr>
+      <tr><td><b>②</b></td><td><b>Care-team alerts.</b> Workers raise an alert in PostgreSQL; the portal receives it live over SSE; a nurse acknowledges or reviews it, and every action is audited. <i>Built in the POC.</i></td></tr>
+      <tr><td><b>③</b></td><td><b>Plug-in apps.</b> A SMART on FHIR app launches from the EHR and reads only what its OAuth scopes allow through the FHIR R4 API.</td></tr>
+      <tr><td><b>④</b></td><td><b>EHR exchange.</b> The resource router pulls conditions and medications from the hospital EHR, and writes back clinician-reviewed care plans only with consent and provenance.</td></tr>
+      <tr><td><b>⑤</b></td><td><b>Devices and legacy feeds.</b> Monitor and wearable readings, plus HL7 v2 lab feeds, enter through adapters, are mapped to LOINC/UCUM, then queued, deduplicated and stored.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Portfolio framing: Senior Health Coaching Platform</h2>
+  <table>
+    <thead><tr><th>Part</th><th>Scope</th><th>Status in this repo</th></tr></thead>
+    <tbody>
+      <tr><td>Patient mobile application</td><td>React Native + TypeScript: daily check-ins, health metrics, reminders, accessibility, offline sync</td><td>Not built yet</td></tr>
+      <tr><td>Doctor &amp; care-team portal</td><td>React + TypeScript: patient lists, cardiac observation trends, alerts, role-based permissions</td><td>Built (CardioWatch web app)</td></tr>
+      <tr><td>Secure backend &amp; integrations</td><td>FastAPI, PostgreSQL, AWS design, simulated FHIR observations, automated tests, audit logging</td><td>Built, except FHIR mapping and AWS deployment</td></tr>
+    </tbody>
+  </table>
+
+  <h1 style="margin-top:48px">AWS deployment</h1>
+  <p class="lede">Proposed production design: two clients behind a single authenticated edge,
+    a private application environment on ECS, and shared security services governing every component.</p>
+
+  <figure>
+    <svg viewBox="0 0 1220 800" role="img" aria-label="Layered AWS architecture: patient app and clinician portal call Amazon API Gateway or ALB with Cognito or an external identity provider; authorized requests reach FastAPI on ECS in a private VPC, which uses RDS PostgreSQL, SQS with workers, and encrypted S3; approved EHR, FHIR and device integrations feed events into SQS; IAM, KMS, Secrets Manager, CloudWatch and audit logging govern everything. The live alarm path runs from devices through SQS workers into RDS, then through FastAPI and the edge to the clinician portal.">
+      <defs>
+        <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk" d="M0 0 L10 5 L0 10 z"/></marker>
+        <marker id="arwA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="mka" d="M0 0 L10 5 L0 10 z"/></marker>
+        <marker id="arwD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mkd" d="M0 0 L10 5 L0 10 z"/></marker>
+      </defs>
+
+      <!-- Clients -->
+      <rect class="box" x="230" y="30" width="300" height="72" rx="10"/>
+      <text class="t" x="380" y="60" text-anchor="middle">Patient app</text>
+      <text class="s" x="380" y="81" text-anchor="middle">React Native · iOS / Android</text>
+
+      <rect class="box" x="690" y="30" width="300" height="72" rx="10"/>
+      <text class="t" x="840" y="60" text-anchor="middle">Clinician portal</text>
+      <text class="s" x="840" y="81" text-anchor="middle">React + TypeScript · nurses, doctors, admins</text>
+      <rect class="tag" x="944" y="38" width="38" height="16" rx="8"/><text class="tagt" x="963" y="50" text-anchor="middle">POC</text>
+
+      <line class="w" x1="380" y1="102" x2="380" y2="158" marker-end="url(#arw)"/>
+      <text class="l" x="392" y="135">HTTPS · OAuth/OIDC</text>
+      <line class="a" x1="840" y1="105" x2="840" y2="156" marker-start="url(#arwA)" marker-end="url(#arwA)"/>
+      <text class="l" x="852" y="135">HTTPS · SSO · SSE live alarms</text>
+
+      <!-- Edge -->
+      <rect class="box" x="150" y="160" width="920" height="72" rx="10"/>
+      <text class="t" x="610" y="190" text-anchor="middle">Amazon API Gateway / ALB  +  Cognito or external IdP</text>
+      <text class="s" x="610" y="211" text-anchor="middle">TLS termination · OAuth 2.0 / OIDC tokens · authentication &amp; coarse authorization · rate limiting</text>
+
+      <!-- Private application environment -->
+      <rect class="zone" x="60" y="276" width="840" height="356" rx="14"/>
+      <text class="z" x="80" y="300">AWS private application environment · VPC private subnets</text>
+
+      <line class="a" x1="260" y1="235" x2="260" y2="326" marker-start="url(#arwA)" marker-end="url(#arwA)"/>
+      <text class="l" x="272" y="258">authorized requests · JWT role claims</text>
+
+      <rect class="box" x="100" y="328" width="320" height="88" rx="10"/>
+      <text class="t" x="260" y="360" text-anchor="middle">FastAPI on ECS Fargate</text>
+      <text class="s" x="260" y="381" text-anchor="middle">REST API · alarm queue · analytics</text>
+      <text class="s" x="260" y="399" text-anchor="middle">server-side RBAC · audit writes</text>
+      <rect class="tag" x="374" y="336" width="38" height="16" rx="8"/><text class="tagt" x="393" y="348" text-anchor="middle">POC</text>
+
+      <rect class="box" x="520" y="328" width="300" height="88" rx="10"/>
+      <text class="t" x="670" y="360" text-anchor="middle">Amazon SQS + workers</text>
+      <text class="s" x="670" y="381" text-anchor="middle">device ingestion · de-duplication</text>
+      <text class="s" x="670" y="399" text-anchor="middle">alarm rules · exports · notifications</text>
+
+      <line class="w" x1="420" y1="372" x2="517" y2="372" marker-end="url(#arw)"/>
+      <text class="l" x="468" y="362" text-anchor="middle">enqueue jobs</text>
+
+      <rect class="box" x="100" y="508" width="320" height="88" rx="10"/>
+      <text class="t" x="260" y="540" text-anchor="middle">Amazon RDS PostgreSQL</text>
+      <text class="s" x="260" y="561" text-anchor="middle">Multi-AZ · encrypted · automated backups</text>
+      <text class="s" x="260" y="579" text-anchor="middle">patients · alarms · reviews · audit log</text>
+      <rect class="tag" x="374" y="516" width="38" height="16" rx="8"/><text class="tagt" x="393" y="528" text-anchor="middle">POC</text>
+
+      <rect class="box" x="520" y="508" width="300" height="88" rx="10"/>
+      <text class="t" x="670" y="540" text-anchor="middle">Amazon S3 · encrypted data</text>
+      <text class="s" x="670" y="561" text-anchor="middle">SSE-KMS · exports · reports</text>
+      <text class="s" x="670" y="579" text-anchor="middle">audit archive (Object Lock)</text>
+
+      <line class="a" x1="260" y1="419" x2="260" y2="505" marker-start="url(#arwA)" marker-end="url(#arwA)"/>
+      <text class="l" x="272" y="466">SQL over TLS</text>
+      <line class="a" x1="560" y1="416" x2="423" y2="520" marker-end="url(#arwA)"/>
+      <text class="l" x="500" y="482" text-anchor="middle">persist readings &amp; alarms</text>
+      <line class="w" x1="740" y1="416" x2="740" y2="505" marker-end="url(#arw)"/>
+      <text class="l" x="752" y="466">exports · archives</text>
+
+      <!-- External integrations -->
+      <rect class="box" x="950" y="328" width="230" height="268" rx="10"/>
+      <text class="t" x="1065" y="360" text-anchor="middle">Approved EHR / FHIR /</text>
+      <text class="t" x="1065" y="379" text-anchor="middle">device integrations</text>
+      <text class="s" x="1065" y="412" text-anchor="middle">bedside monitors · telemetry</text>
+      <text class="s" x="1065" y="430" text-anchor="middle">EHR via HL7 FHIR R4</text>
+      <text class="s" x="1065" y="466" text-anchor="middle">secure external connections</text>
+      <text class="s" x="1065" y="484" text-anchor="middle">(PrivateLink · VPN · mTLS)</text>
+      <text class="s" x="1065" y="520" text-anchor="middle">consent &amp; data governance</text>
+      <text class="s" x="1065" y="538" text-anchor="middle">data-sharing agreements</text>
+
+      <line class="a" x1="948" y1="364" x2="824" y2="364" marker-end="url(#arwA)"/>
+      <text class="l" x="886" y="354" text-anchor="middle">device / FHIR events</text>
+      <line class="d" x1="823" y1="398" x2="947" y2="398" marker-end="url(#arwD)"/>
+      <text class="l" x="886" y="416" text-anchor="middle">write-back</text>
+
+      <!-- Cross-cutting services -->
+      <line class="d" x1="480" y1="680" x2="480" y2="635" marker-end="url(#arwD)"/>
+      <line class="d" x1="1065" y1="680" x2="1065" y2="599" marker-end="url(#arwD)"/>
+      <text class="l" x="492" y="662">governs every component</text>
+      <rect class="bar" x="60" y="682" width="1120" height="64" rx="10"/>
+      <text class="t" x="620" y="709" text-anchor="middle">IAM · KMS · Secrets Manager · CloudWatch · Audit logging</text>
+      <text class="s" x="620" y="730" text-anchor="middle">least-privilege task roles · customer-managed keys · rotated secrets · logs, metrics &amp; alarms · immutable audit trail</text>
+
+      <!-- Legend -->
+      <line class="a" x1="60" y1="778" x2="96" y2="778"/><text class="s" x="104" y="782">live alarm path (device → clinician)</text>
+      <line class="w" x1="330" y1="778" x2="366" y2="778"/><text class="s" x="374" y="782">request / data flow</text>
+      <line class="d" x1="530" y1="778" x2="566" y2="778"/><text class="s" x="574" y="782">governance or optional flow</text>
+      <rect class="tag" x="770" y="770" width="38" height="16" rx="8"/><text class="tagt" x="789" y="782" text-anchor="middle">POC</text>
+      <text class="s" x="816" y="782">running today in the local proof of concept</text>
+    </svg>
+    <figcaption>Every request crosses one authenticated edge before reaching the private VPC. Device and EHR events enter through SQS
+      rather than the API, so ingestion bursts never block clinicians. The blue path is the live alarm path: a reading becomes an alarm
+      in a worker, is stored in RDS, and is pushed to the clinician portal over Server-Sent Events.</figcaption>
+  </figure>
+
+  <h2>From the POC to this design</h2>
+  <table>
+    <thead><tr><th>Target component</th><th>In the local POC today</th><th>What changes for production</th></tr></thead>
+    <tbody>
+      <tr><td>Patient app (React Native)</td><td>Not built</td><td>New client; patient-scoped tokens, consent screens</td></tr>
+      <tr><td>Clinician portal</td><td>React + TypeScript SPA served by nginx (<code>frontend/</code>)</td><td>S3 + CloudFront, or an ECS service behind the ALB</td></tr>
+      <tr><td>API Gateway / ALB + Cognito or IdP</td><td>Demo JWT identity switcher, no passwords (<code>app/auth.py</code>)</td><td>Hospital SSO with MFA (SAML/OIDC); short-lived tokens in httpOnly cookies</td></tr>
+      <tr><td>FastAPI on ECS</td><td>FastAPI container (<code>backend/</code>)</td><td>Fargate service, ≥2 tasks across AZs, health checks, autoscaling</td></tr>
+      <tr><td>SQS + workers</td><td>In-process asyncio simulator and idempotent ingest (<code>app/simulator.py</code>, <code>app/ingest.py</code>)</td><td>SQS queues + DLQ; worker service; SSE fan-out via Redis pub/sub or Postgres LISTEN/NOTIFY</td></tr>
+      <tr><td>RDS PostgreSQL</td><td>PostgreSQL 16 container, Alembic migrations</td><td>Multi-AZ RDS, KMS encryption, IAM database auth, PITR backups</td></tr>
+      <tr><td>S3 encrypted data</td><td>Not used yet</td><td>Exports and audit archive with SSE-KMS and Object Lock</td></tr>
+      <tr><td>IAM · KMS · Secrets · CloudWatch · Audit</td><td>Env-var secrets, <code>audit_log</code> table, logs free of patient data</td><td>Secrets Manager, CloudWatch Logs/alarms, audit shipped to S3 with ≥6-year retention</td></tr>
+      <tr><td>EHR / FHIR / device integrations</td><td>Synthetic generator and <code>POST /api/ingest/measurements</code></td><td>Certified device gateways, FHIR R4 interfaces, BAAs and data-sharing agreements</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Design choices worth defending</h2>
+  <ul>
+    <li><b>Queue in front of ingestion.</b> Device traffic is bursty and duplicated; SQS absorbs spikes, and workers de-duplicate on a natural key (device, parameter, timestamp) before writing.</li>
+    <li><b>One edge, two audiences.</b> Patients and clinicians share the same gateway and identity layer, but get different token scopes; the API still enforces roles server-side on every route.</li>
+    <li><b>Private by default.</b> ECS, RDS and workers live in private subnets; only the edge is public. External partners connect over PrivateLink, VPN or mTLS, never the public API.</li>
+    <li><b>Audit is a product feature.</b> Patient-record views and alarm acknowledgments are written in the same transaction as the action, then archived immutably.</li>
+  </ul>
+  <h1 style="margin-top:48px">Cardiac monitoring data pipeline</h1>
+  <p class="lede">How a reading travels from a device to a clinician, and what the pipeline does when readings arrive missing, late or twice.</p>
+
+  <figure>
+    <svg viewBox="0 0 1240 400" role="img" aria-label="Five-stage cardiac data pipeline from wearable or cardiac monitor, through device SDK or integration API, AWS API and processing queue, clinical data store with FHIR integration, to the doctor portal and patient coaching. The processing stage handles duplicated readings with idempotency keys, delayed readings with device and ingestion timestamps, and missing readings by flagging them rather than treating them as normal.">
+      <defs>
+        <marker id="parw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="mka" d="M0 0 L10 5 L0 10 z"/></marker>
+        <marker id="parwD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mkd" d="M0 0 L10 5 L0 10 z"/></marker>
+      </defs>
+
+      <rect class="box" x="30" y="40" width="200" height="110" rx="10"/>
+      <text class="t" x="130" y="72" text-anchor="middle">Wearable / cardiac</text>
+      <text class="t" x="130" y="90" text-anchor="middle">monitor</text>
+      <text class="s" x="130" y="114" text-anchor="middle">heart rate · ECG · rhythm</text>
+      <text class="s" x="130" y="131" text-anchor="middle">blood pressure · SpO₂</text>
+
+      <rect class="box" x="277" y="40" width="200" height="110" rx="10"/>
+      <text class="t" x="377" y="72" text-anchor="middle">Device SDK / app /</text>
+      <text class="t" x="377" y="90" text-anchor="middle">integration API</text>
+      <text class="s" x="377" y="114" text-anchor="middle">authenticated · consented</text>
+      <text class="s" x="377" y="131" text-anchor="middle">device timestamps</text>
+
+      <rect class="box" x="524" y="40" width="200" height="110" rx="10"/>
+      <text class="t" x="624" y="72" text-anchor="middle">AWS API +</text>
+      <text class="t" x="624" y="90" text-anchor="middle">processing queue</text>
+      <text class="s" x="624" y="114" text-anchor="middle">validate · normalize units</text>
+      <text class="s" x="624" y="131" text-anchor="middle">deduplicate · retry · DLQ</text>
+
+      <rect class="box" x="771" y="40" width="200" height="110" rx="10"/>
+      <text class="t" x="871" y="72" text-anchor="middle">Clinical data store /</text>
+      <text class="t" x="871" y="90" text-anchor="middle">FHIR integration</text>
+      <text class="s" x="871" y="114" text-anchor="middle">Observations · provenance</text>
+      <text class="s" x="871" y="131" text-anchor="middle">audit logs</text>
+
+      <rect class="box" x="1018" y="40" width="200" height="110" rx="10"/>
+      <text class="t" x="1118" y="72" text-anchor="middle">Doctor portal +</text>
+      <text class="t" x="1118" y="90" text-anchor="middle">patient coaching</text>
+      <text class="s" x="1118" y="114" text-anchor="middle">trends · clinician-reviewed</text>
+      <text class="s" x="1118" y="131" text-anchor="middle">alerts · care plans</text>
+
+      <line class="a" x1="230" y1="95" x2="274" y2="95" marker-end="url(#parw)"/>
+      <line class="a" x1="477" y1="95" x2="521" y2="95" marker-end="url(#parw)"/>
+      <line class="a" x1="724" y1="95" x2="768" y2="95" marker-end="url(#parw)"/>
+      <line class="a" x1="971" y1="95" x2="1015" y2="95" marker-end="url(#parw)"/>
+      <text class="l" x="253" y="30" text-anchor="middle">readings</text>
+      <text class="l" x="500" y="30" text-anchor="middle">at-least-once delivery</text>
+      <text class="l" x="747" y="30" text-anchor="middle">valid · deduplicated</text>
+      <text class="l" x="994" y="30" text-anchor="middle">rule-based alerts</text>
+
+      <!-- failure handling at the processing stage -->
+      <line class="d" x1="624" y1="150" x2="624" y2="190"/>
+      <line class="d" x1="200" y1="190" x2="1048" y2="190"/>
+      <line class="d" x1="200" y1="190" x2="200" y2="226" marker-end="url(#parwD)"/>
+      <line class="d" x1="624" y1="190" x2="624" y2="226" marker-end="url(#parwD)"/>
+      <line class="d" x1="1048" y1="190" x2="1048" y2="226" marker-end="url(#parwD)"/>
+      <text class="l" x="636" y="178">when a reading is…</text>
+
+      <rect class="box" x="60" y="228" width="280" height="104" rx="10"/>
+      <text class="t" x="200" y="256" text-anchor="middle">Duplicated</text>
+      <text class="s" x="200" y="279" text-anchor="middle">idempotency key: device + parameter</text>
+      <text class="s" x="200" y="296" text-anchor="middle">+ device timestamp</text>
+      <text class="s" x="200" y="313" text-anchor="middle">→ second copy dropped and counted</text>
+
+      <rect class="box" x="484" y="228" width="280" height="104" rx="10"/>
+      <text class="t" x="624" y="256" text-anchor="middle">Delayed / out of order</text>
+      <text class="s" x="624" y="279" text-anchor="middle">keep device time and ingestion time</text>
+      <text class="s" x="624" y="296" text-anchor="middle">flag as delayed when the gap is large</text>
+      <text class="s" x="624" y="313" text-anchor="middle">→ trends ordered by device time</text>
+
+      <rect class="box" x="908" y="228" width="280" height="104" rx="10"/>
+      <text class="t" x="1048" y="256" text-anchor="middle">Missing / stale</text>
+      <text class="s" x="1048" y="279" text-anchor="middle">stored as missing, never as normal</text>
+      <text class="s" x="1048" y="296" text-anchor="middle">gaps shown in trends</text>
+      <text class="s" x="1048" y="313" text-anchor="middle">→ signal-loss alert by approved rule</text>
+
+      <line class="a" x1="60" y1="378" x2="96" y2="378"/><text class="s" x="104" y="382">reading flow</text>
+      <line class="d" x1="220" y1="378" x2="256" y2="378"/><text class="s" x="264" y="382">data-quality handling at the processing stage</text>
+    </svg>
+    <figcaption>Delivery is at-least-once, so the pipeline must be idempotent. Every reading keeps its device timestamp, ingestion timestamp,
+      unit and provenance. Readings that arrive missing or stale are labelled as such and never presented as normal measurements.
+      Clinically significant alerts follow clinician-approved rules and escalation procedures.</figcaption>
+  </figure>
+
+  <h2>How the POC already does this</h2>
+  <table>
+    <thead><tr><th>Concern</th><th>Implementation in CardioWatch AI</th></tr></thead>
+    <tbody>
+      <tr><td>Duplicates</td><td>Unique key <code>device_id + measurement_type + observed_at</code>; <code>INSERT … ON CONFLICT DO NOTHING</code>; alarms are unique on <code>source_event_id</code>; the simulator counts ignored duplicates</td></tr>
+      <tr><td>Delays</td><td><code>observed_at</code> (device) and <code>received_at</code> (ingestion) stored separately; a gap over 5 min sets <code>quality_status = delayed</code>; analytics always use device time</td></tr>
+      <tr><td>Missing readings</td><td>Stored with a null value and <code>quality_status = missing</code>; device dropout raises a <i>Signal loss</i> advisory; trend charts show gaps rather than interpolating</td></tr>
+      <tr><td>Validation</td><td>Pydantic bounds, allowed measurement types, units set by type, timestamps must carry a timezone</td></tr>
+      <tr><td>Alerts</td><td>Fixed, documented demo thresholds; queue ordered by source severity, not by an unvalidated model</td></tr>
+      <tr><td>Not yet covered</td><td>ECG waveforms, FHIR Observation mapping, retry/DLQ (no queue in the POC)</td></tr>
+    </tbody>
+  </table>
+  <p class="lede" style="margin-top:14px"><b>ECG ≠ heart rate.</b> A heart-rate value is one number every few seconds. An ECG is a high-frequency waveform (hundreds of samples per second, per lead).
+    It needs its own pipeline: chunked waveform storage (e.g. S3 segments indexed in the database), specialized and validated algorithms, and a different viewer.</p>
+
+  <h1 style="margin-top:48px">HIPAA: the essentials</h1>
+  <table>
+    <thead><tr><th style="width:220px">Term</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>PHI</td><td>Protected Health Information</td></tr>
+      <tr><td>ePHI</td><td>Electronic PHI</td></tr>
+      <tr><td>HIPAA Privacy Rule</td><td>Governs permitted uses and disclosures of PHI</td></tr>
+      <tr><td>HIPAA Security Rule</td><td>Requires administrative, physical and technical safeguards for ePHI</td></tr>
+      <tr><td>BAA</td><td>Business Associate Agreement</td></tr>
+      <tr><td>SOC 2</td><td>Independent assurance report on an organization's controls</td></tr>
+      <tr><td>ISO 27001</td><td>Information security management system standard</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Seven practical safeguards</h2>
+  <ul>
+    <li><b>Least-privilege access</b>: roles enforced server-side (in the POC: nurse, doctor, admin permission matrix).</li>
+    <li><b>MFA</b>: through the hospital identity provider.</li>
+    <li><b>Encryption</b>: TLS in transit; KMS-encrypted RDS, S3 and backups at rest.</li>
+    <li><b>Audit logging</b>: record access and alarm actions written with the action, archived immutably (in the POC: <code>audit_log</code>).</li>
+    <li><b>Secure secrets</b>: Secrets Manager, rotation, nothing in code (in the POC: environment variables).</li>
+    <li><b>Incident response</b>: runbooks, on-call, breach assessment and notification.</li>
+    <li><b>Controlled use of synthetic or de-identified data</b>: no production PHI in development or testing (the POC is fully synthetic).</li>
+  </ul>
+
+  <h2>Data location and offshore access</h2>
+  <p>HIPAA does not impose one universal rule that patient data must stay physically in the United States. Offshore access is assessed against the applicable
+    agreements (BAAs and client contracts), permitted uses, security controls and organizational policies, so ask what the client's data-access policy restricts.</p>
+  <table>
+    <tbody>
+      <tr><td style="width:220px"><b>Q.</b> What happens if cardiac readings are missing, delayed or duplicated?</td>
+        <td>Design for at-least-once delivery: idempotency keys, device and ingestion timestamps, unit validation and provenance. Missing or stale readings are marked as such, never treated as normal. Clinically significant alerts follow clinician-approved rules and escalation procedures.</td></tr>
+      <tr><td><b>Q.</b> Can developers in Vietnam access US patient data?</td>
+        <td>Only where explicitly authorized under the client's legal, contractual and security framework. Default engineering policy: no production PHI in development or testing, synthetic datasets, least-privilege access, and logged, approved production access. Any exception needs formal authorization.</td></tr>
+    </tbody>
+  </table>
+
+  <p class="note">CardioWatch AI is a proof of concept on synthetic data. It is not a medical device and not HIPAA compliant; this page describes a target design, not a certified deployment.</p>
+</main>
+</body>
+</html>
