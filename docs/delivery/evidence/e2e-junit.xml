@@ -1,0 +1,10 @@
+<testsuites id="" name="" tests="2" failures="0" skipped="0" errors="0" time="1.9094179999999996">
+<testsuite name="acknowledge-workflow.spec.ts" timestamp="2026-11-03T13:37:05.923Z" hostname="" tests="1" failures="0" skipped="0" time="1.009" errors="0">
+<testcase name="nurse acknowledges an alarm from the Command Center and it is audited" classname="acknowledge-workflow.spec.ts" time="1.009">
+</testcase>
+</testsuite>
+<testsuite name="mobile-checkin.spec.ts" timestamp="2026-11-03T13:37:05.923Z" hostname="" tests="1" failures="0" skipped="0" time="0.806" errors="0">
+<testcase name="patient submits a daily check-in that the care team can see" classname="mobile-checkin.spec.ts" time="0.806">
+</testcase>
+</testsuite>
+</testsuites>

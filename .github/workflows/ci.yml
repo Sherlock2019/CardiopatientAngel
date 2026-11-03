@@ -30,7 +30,12 @@ jobs:
           python-version: "3.12"
       - run: uv sync
       - run: uv run alembic upgrade head   # migrations apply cleanly
-      - run: uv run pytest
+      - run: uv run pytest --junitxml=backend-junit.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-junit
+          path: backend/backend-junit.xml
 
   frontend:
     runs-on: ubuntu-latest
@@ -46,4 +51,25 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run build
-      - run: npm test
+      - run: npx vitest run --reporter=default --reporter=junit --outputFile.junit=frontend-junit.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-junit
+          path: frontend/frontend-junit.xml
+
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx expo export --platform web --output-dir dist

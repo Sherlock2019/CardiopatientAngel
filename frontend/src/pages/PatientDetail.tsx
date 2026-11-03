@@ -24,6 +24,7 @@ interface Detail {
   alarm_totals: { total: number; resolved: number; critical: number };
   attention: Attention | null;
   device: DeviceRow | null;
+  checkins: { submitted_at: string; feeling: number; symptoms: string[]; took_medications: boolean; notes: string | null; source: string }[];
 }
 interface Meas { measurement_type: string; numeric_value: number | null; observed_at: string; quality_status: string; latency_seconds: number }
 
@@ -280,6 +281,25 @@ export default function PatientDetail() {
           </div>
         )}
       </Card>
+
+      {d.checkins.length > 0 && (
+        <Card>
+          <CardHeader title="Patient-reported check-ins (mobile app)" subtitle="Self-reported by the patient; not clinically verified" />
+          <table className="w-full text-xs">
+            <tbody>
+              {d.checkins.map((c) => (
+                <tr key={c.submitted_at} className="border-b border-black/5">
+                  <td className="tabular px-4 py-1.5">{fmtTime(c.submitted_at)}</td>
+                  <td className="px-2">Feeling {c.feeling}/5</td>
+                  <td className={c.symptoms.length ? "px-2 font-medium" : "px-2 text-muted"}>{c.symptoms.join(", ") || "no symptoms"}</td>
+                  <td className="px-2">{c.took_medications ? "✓ took medications" : "✗ missed medications"}</td>
+                  <td className="px-2 text-ink-2">{c.notes}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
 
       <Card>
         <CardHeader title="Clinical review history" />

@@ -1,0 +1,4161 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "CardioWatch AI API",
+  "description": "From Cardiac Monitoring Data to Better Clinical Awareness and Care-Team Coordination. Proof of concept on SYNTHETIC data only \u2014 not a medical device.",
+  "version": "0.1.0"
+ },
+ "paths": {
+  "/health": {
+   "get": {
+    "tags": [
+     "meta"
+    ],
+    "summary": "Health",
+    "operationId": "health_health_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/auth/users": {
+   "get": {
+    "tags": [
+     "auth"
+    ],
+    "summary": "Demo Users",
+    "operationId": "demo_users_api_auth_users_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/auth/login": {
+   "post": {
+    "tags": [
+     "auth"
+    ],
+    "summary": "Login",
+    "operationId": "login_api_auth_login_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/LoginIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/auth/me": {
+   "get": {
+    "tags": [
+     "auth"
+    ],
+    "summary": "Me",
+    "operationId": "me_api_auth_me_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/meta": {
+   "get": {
+    "tags": [
+     "meta"
+    ],
+    "summary": "Meta",
+    "operationId": "meta_api_meta_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/dashboard/summary": {
+   "get": {
+    "tags": [
+     "dashboard"
+    ],
+    "summary": "Dashboard Summary",
+    "operationId": "dashboard_summary_api_dashboard_summary_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/patients": {
+   "get": {
+    "tags": [
+     "patients"
+    ],
+    "summary": "List Patients",
+    "operationId": "list_patients_api_patients_get",
+    "parameters": [
+     {
+      "name": "search",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 60
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Search"
+      }
+     },
+     {
+      "name": "unit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Unit"
+      }
+     },
+     {
+      "name": "age_group",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Age Group"
+      }
+     },
+     {
+      "name": "status",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "pattern": "^(active|discharged)$"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      }
+     },
+     {
+      "name": "pathology",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Pathology"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^(alarms_24h|alarms_total|active_alarms|age|admission_date|patient_id)$",
+       "default": "alarms_24h",
+       "title": "Sort"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "minimum": 1,
+       "default": 1,
+       "title": "Page"
+      }
+     },
+     {
+      "name": "page_size",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "maximum": 100,
+       "minimum": 1,
+       "default": 25,
+       "title": "Page Size"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/patients/{patient_id}": {
+   "get": {
+    "tags": [
+     "patients"
+    ],
+    "summary": "Patient Detail",
+    "operationId": "patient_detail_api_patients__patient_id__get",
+    "parameters": [
+     {
+      "name": "patient_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Patient Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/patients/{patient_id}/measurements": {
+   "get": {
+    "tags": [
+     "patients"
+    ],
+    "summary": "Patient Measurements",
+    "operationId": "patient_measurements_api_patients__patient_id__measurements_get",
+    "parameters": [
+     {
+      "name": "patient_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Patient Id"
+      }
+     },
+     {
+      "name": "hours",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "maximum": 2400,
+       "minimum": 1,
+       "default": 72,
+       "title": "Hours"
+      }
+     },
+     {
+      "name": "measurement_type",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "pattern": "^(heart_rate|systolic_bp|diastolic_bp|spo2|sleep_hours)$"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Measurement Type"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/patients/{patient_id}/alarms": {
+   "get": {
+    "tags": [
+     "patients"
+    ],
+    "summary": "Patient Alarms",
+    "operationId": "patient_alarms_api_patients__patient_id__alarms_get",
+    "parameters": [
+     {
+      "name": "patient_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Patient Id"
+      }
+     },
+     {
+      "name": "limit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "maximum": 2000,
+       "minimum": 1,
+       "default": 300,
+       "title": "Limit"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/alarms": {
+   "get": {
+    "tags": [
+     "alarms"
+    ],
+    "summary": "List Alarms",
+    "operationId": "list_alarms_api_alarms_get",
+    "parameters": [
+     {
+      "name": "status",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^(active|unacknowledged|acknowledged|resolved|all)$",
+       "default": "active",
+       "title": "Status"
+      }
+     },
+     {
+      "name": "severity",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Severity"
+      }
+     },
+     {
+      "name": "unit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Unit"
+      }
+     },
+     {
+      "name": "alarm_type",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Alarm Type"
+      }
+     },
+     {
+      "name": "nurse",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 60
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Nurse"
+      }
+     },
+     {
+      "name": "search",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 60
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Search"
+      }
+     },
+     {
+      "name": "hours",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer",
+         "maximum": 2400,
+         "minimum": 1
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Hours"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^(priority|newest|oldest|severity|attention)$",
+       "default": "priority",
+       "title": "Sort"
+      }
+     },
+     {
+      "name": "limit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "maximum": 1000,
+       "minimum": 1,
+       "default": 200,
+       "title": "Limit"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/alarms/{alarm_id}/acknowledge": {
+   "post": {
+    "tags": [
+     "alarms"
+    ],
+    "summary": "Acknowledge",
+    "operationId": "acknowledge_api_alarms__alarm_id__acknowledge_post",
+    "parameters": [
+     {
+      "name": "alarm_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Alarm Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "anyOf": [
+         {
+          "$ref": "#/components/schemas/AckIn"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "title": "Body"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/alarms/{alarm_id}/resolve": {
+   "post": {
+    "tags": [
+     "alarms"
+    ],
+    "summary": "Resolve",
+    "operationId": "resolve_api_alarms__alarm_id__resolve_post",
+    "parameters": [
+     {
+      "name": "alarm_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Alarm Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ResolveIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/alarms/{alarm_id}/consult-request": {
+   "post": {
+    "tags": [
+     "alarms",
+     "integration"
+    ],
+    "summary": "Consult Request",
+    "description": "Ask the connected virtual-care platform to open a video consult for this alarm (integration outbox event).",
+    "operationId": "consult_request_api_alarms__alarm_id__consult_request_post",
+    "parameters": [
+     {
+      "name": "alarm_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Alarm Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ConsultIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/integration/events": {
+   "get": {
+    "tags": [
+     "integration"
+    ],
+    "summary": "Integration Events",
+    "operationId": "integration_events_api_integration_events_get",
+    "parameters": [
+     {
+      "name": "limit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "maximum": 500,
+       "minimum": 1,
+       "default": 50,
+       "title": "Limit"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/device-profiles": {
+   "get": {
+    "tags": [
+     "devices"
+    ],
+    "summary": "Device Profiles",
+    "description": "Product templates: what each device type measures (LOINC/UCUM), which alarm rules apply, when it counts as offline.",
+    "operationId": "device_profiles_api_device_profiles_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/devices": {
+   "get": {
+    "tags": [
+     "devices"
+    ],
+    "summary": "List Devices",
+    "description": "Fleet of devices assigned to currently monitored patients, with derived connectivity/battery health.",
+    "operationId": "list_devices_api_devices_get",
+    "parameters": [
+     {
+      "name": "device_type",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Device Type"
+      }
+     },
+     {
+      "name": "health",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "pattern": "^(online|offline|low_battery)$"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Health"
+      }
+     },
+     {
+      "name": "unit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Unit"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/ingest/measurements": {
+   "post": {
+    "tags": [
+     "ingestion"
+    ],
+    "summary": "Ingest",
+    "operationId": "ingest_api_ingest_measurements_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "items": {
+         "$ref": "#/components/schemas/MeasurementIn"
+        },
+        "type": "array",
+        "title": "Items"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/simulator/status": {
+   "get": {
+    "tags": [
+     "simulator"
+    ],
+    "summary": "Simulator Status",
+    "operationId": "simulator_status_api_simulator_status_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/simulator/start": {
+   "post": {
+    "tags": [
+     "simulator"
+    ],
+    "summary": "Simulator Start",
+    "operationId": "simulator_start_api_simulator_start_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "anyOf": [
+         {
+          "$ref": "#/components/schemas/SimulatorConfig"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "title": "Cfg"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/simulator/stop": {
+   "post": {
+    "tags": [
+     "simulator"
+    ],
+    "summary": "Simulator Stop",
+    "operationId": "simulator_stop_api_simulator_stop_post",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/stream": {
+   "get": {
+    "tags": [
+     "live"
+    ],
+    "summary": "Stream",
+    "description": "Server-Sent Events: `alarm` (new alarm) and `alarm_updated` (acknowledged / resolved).",
+    "operationId": "stream_api_stream_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/settings": {
+   "get": {
+    "tags": [
+     "settings"
+    ],
+    "summary": "Get Settings",
+    "operationId": "get_settings_api_settings_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   },
+   "put": {
+    "tags": [
+     "settings"
+    ],
+    "summary": "Put Settings",
+    "operationId": "put_settings_api_settings_put",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SettingsPatch"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/settings/reset": {
+   "post": {
+    "tags": [
+     "settings"
+    ],
+    "summary": "Reset Settings",
+    "operationId": "reset_settings_api_settings_reset_post",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/audit/verify": {
+   "get": {
+    "tags": [
+     "audit"
+    ],
+    "summary": "Audit Verify",
+    "description": "Recompute the audit hash chain; any edited or deleted entry breaks it.",
+    "operationId": "audit_verify_api_audit_verify_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/audit": {
+   "get": {
+    "tags": [
+     "audit"
+    ],
+    "summary": "Audit Log",
+    "operationId": "audit_log_api_audit_get",
+    "parameters": [
+     {
+      "name": "limit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "maximum": 1000,
+       "minimum": 1,
+       "default": 100,
+       "title": "Limit"
+      }
+     },
+     {
+      "name": "resource_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 40
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Resource Id"
+      }
+     },
+     {
+      "name": "action",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 40
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Action"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/analytics/by-age": {
+   "get": {
+    "tags": [
+     "analytics"
+    ],
+    "summary": "By Age",
+    "operationId": "by_age_api_analytics_by_age_get",
+    "parameters": [
+     {
+      "name": "date_from",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      }
+     },
+     {
+      "name": "date_to",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      }
+     },
+     {
+      "name": "tz",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 40
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Tz"
+      }
+     },
+     {
+      "name": "unit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Unit"
+      }
+     },
+     {
+      "name": "alarm_type",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Alarm Type"
+      }
+     },
+     {
+      "name": "severity",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Severity"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/analytics/by-device": {
+   "get": {
+    "tags": [
+     "analytics"
+    ],
+    "summary": "By Device",
+    "operationId": "by_device_api_analytics_by_device_get",
+    "parameters": [
+     {
+      "name": "date_from",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      }
+     },
+     {
+      "name": "date_to",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      }
+     },
+     {
+      "name": "tz",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 40
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Tz"
+      }
+     },
+     {
+      "name": "unit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Unit"
+      }
+     },
+     {
+      "name": "alarm_type",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Alarm Type"
+      }
+     },
+     {
+      "name": "severity",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Severity"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/analytics/by-pathology": {
+   "get": {
+    "tags": [
+     "analytics"
+    ],
+    "summary": "By Pathology",
+    "operationId": "by_pathology_api_analytics_by_pathology_get",
+    "parameters": [
+     {
+      "name": "date_from",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      }
+     },
+     {
+      "name": "date_to",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      }
+     },
+     {
+      "name": "tz",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 40
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Tz"
+      }
+     },
+     {
+      "name": "unit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Unit"
+      }
+     },
+     {
+      "name": "alarm_type",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Alarm Type"
+      }
+     },
+     {
+      "name": "severity",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Severity"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/analytics/by-treatment": {
+   "get": {
+    "tags": [
+     "analytics"
+    ],
+    "summary": "By Treatment",
+    "operationId": "by_treatment_api_analytics_by_treatment_get",
+    "parameters": [
+     {
+      "name": "date_from",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      }
+     },
+     {
+      "name": "date_to",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      }
+     },
+     {
+      "name": "tz",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 40
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Tz"
+      }
+     },
+     {
+      "name": "unit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Unit"
+      }
+     },
+     {
+      "name": "alarm_type",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Alarm Type"
+      }
+     },
+     {
+      "name": "severity",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Severity"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/analytics/by-medication": {
+   "get": {
+    "tags": [
+     "analytics"
+    ],
+    "summary": "By Medication",
+    "operationId": "by_medication_api_analytics_by_medication_get",
+    "parameters": [
+     {
+      "name": "date_from",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      }
+     },
+     {
+      "name": "date_to",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      }
+     },
+     {
+      "name": "tz",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 40
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Tz"
+      }
+     },
+     {
+      "name": "unit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Unit"
+      }
+     },
+     {
+      "name": "alarm_type",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Alarm Type"
+      }
+     },
+     {
+      "name": "severity",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Severity"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/analytics/age-pathology": {
+   "get": {
+    "tags": [
+     "analytics"
+    ],
+    "summary": "Age Pathology",
+    "operationId": "age_pathology_api_analytics_age_pathology_get",
+    "parameters": [
+     {
+      "name": "date_from",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      }
+     },
+     {
+      "name": "date_to",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      }
+     },
+     {
+      "name": "tz",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 40
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Tz"
+      }
+     },
+     {
+      "name": "unit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Unit"
+      }
+     },
+     {
+      "name": "alarm_type",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Alarm Type"
+      }
+     },
+     {
+      "name": "severity",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Severity"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/analytics/hourly-heatmap": {
+   "get": {
+    "tags": [
+     "analytics"
+    ],
+    "summary": "Hourly Heatmap",
+    "operationId": "hourly_heatmap_api_analytics_hourly_heatmap_get",
+    "parameters": [
+     {
+      "name": "date_from",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      }
+     },
+     {
+      "name": "date_to",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      }
+     },
+     {
+      "name": "tz",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 40
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Tz"
+      }
+     },
+     {
+      "name": "unit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Unit"
+      }
+     },
+     {
+      "name": "alarm_type",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Alarm Type"
+      }
+     },
+     {
+      "name": "severity",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Severity"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/analytics/trends": {
+   "get": {
+    "tags": [
+     "analytics"
+    ],
+    "summary": "Trends",
+    "operationId": "trends_api_analytics_trends_get",
+    "parameters": [
+     {
+      "name": "granularity",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^(day|week)$",
+       "default": "day",
+       "title": "Granularity"
+      }
+     },
+     {
+      "name": "date_from",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      }
+     },
+     {
+      "name": "date_to",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      }
+     },
+     {
+      "name": "tz",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 40
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Tz"
+      }
+     },
+     {
+      "name": "unit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Unit"
+      }
+     },
+     {
+      "name": "alarm_type",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Alarm Type"
+      }
+     },
+     {
+      "name": "severity",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Severity"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/analytics/staffing": {
+   "get": {
+    "tags": [
+     "analytics"
+    ],
+    "summary": "Staffing",
+    "operationId": "staffing_api_analytics_staffing_get",
+    "parameters": [
+     {
+      "name": "date_from",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      }
+     },
+     {
+      "name": "date_to",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      }
+     },
+     {
+      "name": "tz",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 40
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Tz"
+      }
+     },
+     {
+      "name": "unit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Unit"
+      }
+     },
+     {
+      "name": "alarm_type",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Alarm Type"
+      }
+     },
+     {
+      "name": "severity",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Severity"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/analytics/outcomes": {
+   "get": {
+    "tags": [
+     "analytics"
+    ],
+    "summary": "Outcomes",
+    "description": "Deceased vs. discharged-alive comparison across age, disease, treatment, medication, unit and alarm burden.",
+    "operationId": "outcomes_api_analytics_outcomes_get",
+    "parameters": [
+     {
+      "name": "date_from",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      }
+     },
+     {
+      "name": "date_to",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      }
+     },
+     {
+      "name": "tz",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 40
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Tz"
+      }
+     },
+     {
+      "name": "unit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Unit"
+      }
+     },
+     {
+      "name": "alarm_type",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Alarm Type"
+      }
+     },
+     {
+      "name": "severity",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Severity"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/analytics/cohorts": {
+   "get": {
+    "tags": [
+     "analytics"
+    ],
+    "summary": "Cohorts",
+    "description": "Cohort explorer. Filters: age_group, pathology, medication_class, treatment, unit, alarm_type,\nseverity, hour (repeatable). Reference cohort: same names prefixed with `ref_`; default = all\nmonitored patients with the same alarm-type/severity/hour filters.",
+    "operationId": "cohorts_api_analytics_cohorts_get",
+    "parameters": [
+     {
+      "name": "date_from",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      }
+     },
+     {
+      "name": "date_to",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      }
+     },
+     {
+      "name": "tz",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 40
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Tz"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/knowledge/categories": {
+   "get": {
+    "tags": [
+     "knowledge"
+    ],
+    "summary": "Categories",
+    "operationId": "categories_api_knowledge_categories_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/knowledge": {
+   "get": {
+    "tags": [
+     "knowledge"
+    ],
+    "summary": "List Records",
+    "operationId": "list_records_api_knowledge_get",
+    "parameters": [
+     {
+      "name": "category",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Category"
+      }
+     },
+     {
+      "name": "status",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      }
+     },
+     {
+      "name": "q",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 200
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Q"
+      }
+     },
+     {
+      "name": "tag",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 60
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Tag"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "knowledge"
+    ],
+    "summary": "Create",
+    "operationId": "create_api_knowledge_post",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/KnowledgeIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/knowledge/metrics": {
+   "get": {
+    "tags": [
+     "knowledge"
+    ],
+    "summary": "Knowledge Metrics",
+    "operationId": "knowledge_metrics_api_knowledge_metrics_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/knowledge/review-queue": {
+   "get": {
+    "tags": [
+     "knowledge"
+    ],
+    "summary": "Review Queue",
+    "operationId": "review_queue_api_knowledge_review_queue_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/knowledge/ask": {
+   "get": {
+    "tags": [
+     "knowledge"
+    ],
+    "summary": "Ask",
+    "description": "Engineering assistant: answers only from approved, authorized records, with citations.",
+    "operationId": "ask_api_knowledge_ask_get",
+    "parameters": [
+     {
+      "name": "q",
+      "in": "query",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "minLength": 3,
+       "maxLength": 300,
+       "title": "Q"
+      }
+     },
+     {
+      "name": "feature",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 60
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Feature"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/knowledge/preview": {
+   "post": {
+    "tags": [
+     "knowledge"
+    ],
+    "summary": "Preview",
+    "description": "Show the automatic classification and redaction before submitting.",
+    "operationId": "preview_api_knowledge_preview_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/KnowledgeIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/knowledge/{knowledge_id}": {
+   "put": {
+    "tags": [
+     "knowledge"
+    ],
+    "summary": "Edit",
+    "description": "Edits create a new version; approved knowledge goes back to review (no silent changes to guidance).",
+    "operationId": "edit_api_knowledge__knowledge_id__put",
+    "parameters": [
+     {
+      "name": "knowledge_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Knowledge Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/KnowledgeIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "get": {
+    "tags": [
+     "knowledge"
+    ],
+    "summary": "Get Record",
+    "operationId": "get_record_api_knowledge__knowledge_id__get",
+    "parameters": [
+     {
+      "name": "knowledge_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Knowledge Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/knowledge/{knowledge_id}/submit": {
+   "post": {
+    "tags": [
+     "knowledge"
+    ],
+    "summary": "Submit",
+    "operationId": "submit_api_knowledge__knowledge_id__submit_post",
+    "parameters": [
+     {
+      "name": "knowledge_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Knowledge Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/knowledge/{knowledge_id}/review": {
+   "post": {
+    "tags": [
+     "knowledge"
+    ],
+    "summary": "Review",
+    "operationId": "review_api_knowledge__knowledge_id__review_post",
+    "parameters": [
+     {
+      "name": "knowledge_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Knowledge Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ReviewIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/knowledge/{knowledge_id}/deprecate": {
+   "post": {
+    "tags": [
+     "knowledge"
+    ],
+    "summary": "Deprecate",
+    "operationId": "deprecate_api_knowledge__knowledge_id__deprecate_post",
+    "parameters": [
+     {
+      "name": "knowledge_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Knowledge Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DeprecateIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/knowledge/{knowledge_id}/feedback": {
+   "post": {
+    "tags": [
+     "knowledge"
+    ],
+    "summary": "Feedback",
+    "operationId": "feedback_api_knowledge__knowledge_id__feedback_post",
+    "parameters": [
+     {
+      "name": "knowledge_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Knowledge Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/FeedbackIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/knowledge/{knowledge_id}/reuse": {
+   "post": {
+    "tags": [
+     "knowledge"
+    ],
+    "summary": "Reuse",
+    "description": "Record that a feature applied this knowledge (the compounding signal).",
+    "operationId": "reuse_api_knowledge__knowledge_id__reuse_post",
+    "parameters": [
+     {
+      "name": "knowledge_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Knowledge Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ReuseIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/engineering/docs": {
+   "get": {
+    "tags": [
+     "engineering"
+    ],
+    "summary": "List Docs",
+    "operationId": "list_docs_api_engineering_docs_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/engineering/source": {
+   "get": {
+    "tags": [
+     "engineering"
+    ],
+    "summary": "Source",
+    "operationId": "source_api_engineering_source_get",
+    "parameters": [
+     {
+      "name": "path",
+      "in": "query",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "maxLength": 200,
+       "title": "Path"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/engineering/test-results": {
+   "get": {
+    "tags": [
+     "engineering"
+    ],
+    "summary": "Get Test Results",
+    "operationId": "get_test_results_api_engineering_test_results_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/engineering/lifecycle": {
+   "get": {
+    "tags": [
+     "engineering"
+    ],
+    "summary": "Lifecycle",
+    "operationId": "lifecycle_api_engineering_lifecycle_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/engineering/operations": {
+   "get": {
+    "tags": [
+     "engineering"
+    ],
+    "summary": "Operations",
+    "operationId": "operations_api_engineering_operations_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/engineering/roles": {
+   "get": {
+    "tags": [
+     "engineering"
+    ],
+    "summary": "Role Matrix",
+    "description": "Live permission matrix from the server's source of truth (app/auth.py).",
+    "operationId": "role_matrix_api_engineering_roles_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/me": {
+   "get": {
+    "tags": [
+     "patient app"
+    ],
+    "summary": "Me",
+    "operationId": "me_api_me_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/me/trends": {
+   "get": {
+    "tags": [
+     "patient app"
+    ],
+    "summary": "Trends",
+    "operationId": "trends_api_me_trends_get",
+    "parameters": [
+     {
+      "name": "signal",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "enum": [
+        "heart_rate",
+        "systolic_bp",
+        "diastolic_bp",
+        "spo2",
+        "sleep_hours"
+       ],
+       "type": "string",
+       "default": "heart_rate",
+       "title": "Signal"
+      }
+     },
+     {
+      "name": "days",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "maximum": 30,
+       "minimum": 1,
+       "default": 7,
+       "title": "Days"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/me/medications": {
+   "get": {
+    "tags": [
+     "patient app"
+    ],
+    "summary": "Medications",
+    "operationId": "medications_api_me_medications_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/me/checkins": {
+   "get": {
+    "tags": [
+     "patient app"
+    ],
+    "summary": "List Checkins",
+    "operationId": "list_checkins_api_me_checkins_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "patient app"
+    ],
+    "summary": "Submit Checkin",
+    "operationId": "submit_checkin_api_me_checkins_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CheckInIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/me/coaching": {
+   "get": {
+    "tags": [
+     "patient app"
+    ],
+    "summary": "Coaching",
+    "description": "Simple, non-clinical engagement messages (no diagnosis, no medication advice).",
+    "operationId": "coaching_api_me_coaching_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "components": {
+  "schemas": {
+   "AckIn": {
+    "properties": {
+     "note": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 500
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     }
+    },
+    "type": "object",
+    "title": "AckIn"
+   },
+   "AttentionWeights": {
+    "properties": {
+     "severity_points": {
+      "anyOf": [
+       {
+        "additionalProperties": {
+         "type": "integer"
+        },
+        "propertyNames": {
+         "enum": [
+          "critical",
+          "warning",
+          "advisory"
+         ]
+        },
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Severity Points"
+     },
+     "recent_window_hours": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 48.0,
+        "minimum": 1.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Recent Window Hours"
+     },
+     "points_per_recent_alarm": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 50.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Points Per Recent Alarm"
+     },
+     "recent_cap": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 100.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Recent Cap"
+     },
+     "points_per_minute_unacknowledged": {
+      "anyOf": [
+       {
+        "type": "number",
+        "maximum": 10.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Points Per Minute Unacknowledged"
+     },
+     "unacknowledged_cap": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 100.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Unacknowledged Cap"
+     },
+     "points_per_repeat": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 50.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Points Per Repeat"
+     },
+     "repeat_cap": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 100.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Repeat Cap"
+     }
+    },
+    "type": "object",
+    "title": "AttentionWeights"
+   },
+   "CheckInIn": {
+    "properties": {
+     "feeling": {
+      "type": "integer",
+      "maximum": 5.0,
+      "minimum": 1.0,
+      "title": "Feeling"
+     },
+     "symptoms": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "maxItems": 7,
+      "title": "Symptoms"
+     },
+     "took_medications": {
+      "type": "boolean",
+      "title": "Took Medications"
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 500
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notes"
+     }
+    },
+    "type": "object",
+    "required": [
+     "feeling",
+     "took_medications"
+    ],
+    "title": "CheckInIn"
+   },
+   "ConsultIn": {
+    "properties": {
+     "urgency": {
+      "type": "string",
+      "enum": [
+       "routine",
+       "urgent"
+      ],
+      "title": "Urgency",
+      "default": "routine"
+     }
+    },
+    "type": "object",
+    "title": "ConsultIn"
+   },
+   "DeprecateIn": {
+    "properties": {
+     "superseded_by": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 24
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Superseded By"
+     },
+     "comment": {
+      "type": "string",
+      "maxLength": 1000,
+      "minLength": 5,
+      "title": "Comment"
+     }
+    },
+    "type": "object",
+    "required": [
+     "comment"
+    ],
+    "title": "DeprecateIn"
+   },
+   "FeedbackIn": {
+    "properties": {
+     "useful": {
+      "type": "boolean",
+      "title": "Useful"
+     },
+     "comment": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 500
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Comment"
+     }
+    },
+    "type": "object",
+    "required": [
+     "useful"
+    ],
+    "title": "FeedbackIn"
+   },
+   "HTTPValidationError": {
+    "properties": {
+     "detail": {
+      "items": {
+       "$ref": "#/components/schemas/ValidationError"
+      },
+      "type": "array",
+      "title": "Detail"
+     }
+    },
+    "type": "object",
+    "title": "HTTPValidationError"
+   },
+   "KnowledgeIn": {
+    "properties": {
+     "title": {
+      "type": "string",
+      "maxLength": 200,
+      "minLength": 5,
+      "title": "Title"
+     },
+     "summary": {
+      "type": "string",
+      "maxLength": 1000,
+      "minLength": 10,
+      "title": "Summary"
+     },
+     "content": {
+      "type": "string",
+      "maxLength": 20000,
+      "minLength": 20,
+      "title": "Content"
+     },
+     "category": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Category"
+     },
+     "source_type": {
+      "type": "string",
+      "title": "Source Type",
+      "default": "other"
+     },
+     "source_reference": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 300
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source Reference"
+     },
+     "related_feature": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 60
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Related Feature"
+     },
+     "access_classification": {
+      "type": "string",
+      "enum": [
+       "public",
+       "internal",
+       "restricted"
+      ],
+      "title": "Access Classification",
+      "default": "internal"
+     },
+     "tags": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "maxItems": 20,
+      "title": "Tags"
+     },
+     "submit_for_review": {
+      "type": "boolean",
+      "title": "Submit For Review",
+      "default": true
+     }
+    },
+    "type": "object",
+    "required": [
+     "title",
+     "summary",
+     "content"
+    ],
+    "title": "KnowledgeIn"
+   },
+   "LoginIn": {
+    "properties": {
+     "username": {
+      "type": "string",
+      "maxLength": 40,
+      "title": "Username"
+     }
+    },
+    "type": "object",
+    "required": [
+     "username"
+    ],
+    "title": "LoginIn"
+   },
+   "MeasurementIn": {
+    "properties": {
+     "patient_id": {
+      "type": "string",
+      "pattern": "^P\\d{5}$",
+      "title": "Patient Id"
+     },
+     "measurement_type": {
+      "type": "string",
+      "enum": [
+       "heart_rate",
+       "systolic_bp",
+       "diastolic_bp",
+       "spo2",
+       "sleep_hours"
+      ],
+      "title": "Measurement Type"
+     },
+     "value": {
+      "anyOf": [
+       {
+        "type": "number",
+        "maximum": 400.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Value"
+     },
+     "observed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Observed At"
+     },
+     "received_at": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Received At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "patient_id",
+     "measurement_type",
+     "observed_at"
+    ],
+    "title": "MeasurementIn"
+   },
+   "ResolveIn": {
+    "properties": {
+     "disposition": {
+      "type": "string",
+      "title": "Disposition"
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 1000
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notes"
+     }
+    },
+    "type": "object",
+    "required": [
+     "disposition"
+    ],
+    "title": "ResolveIn"
+   },
+   "ReuseIn": {
+    "properties": {
+     "feature": {
+      "type": "string",
+      "maxLength": 60,
+      "minLength": 2,
+      "title": "Feature"
+     },
+     "context": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 300
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Context"
+     }
+    },
+    "type": "object",
+    "required": [
+     "feature"
+    ],
+    "title": "ReuseIn"
+   },
+   "ReviewIn": {
+    "properties": {
+     "decision": {
+      "type": "string",
+      "enum": [
+       "approve",
+       "reject"
+      ],
+      "title": "Decision"
+     },
+     "comment": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 1000
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Comment"
+     }
+    },
+    "type": "object",
+    "required": [
+     "decision"
+    ],
+    "title": "ReviewIn"
+   },
+   "SettingsPatch": {
+    "properties": {
+     "display_timezone": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Display Timezone"
+     },
+     "repeat_window_minutes": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 1440.0,
+        "minimum": 5.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Repeat Window Minutes"
+     },
+     "small_cohort_patients": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 500.0,
+        "minimum": 1.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Small Cohort Patients"
+     },
+     "suppress_cohort_patients": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 500.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Suppress Cohort Patients"
+     },
+     "attention": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AttentionWeights"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "type": "object",
+    "title": "SettingsPatch"
+   },
+   "SimulatorConfig": {
+    "properties": {
+     "interval_seconds": {
+      "anyOf": [
+       {
+        "type": "number",
+        "maximum": 60.0,
+        "minimum": 0.5
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Interval Seconds"
+     },
+     "patients_per_tick": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 50.0,
+        "minimum": 1.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Patients Per Tick"
+     },
+     "abnormal_probability": {
+      "anyOf": [
+       {
+        "type": "number",
+        "maximum": 0.5,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Abnormal Probability"
+     },
+     "duplicate_probability": {
+      "anyOf": [
+       {
+        "type": "number",
+        "maximum": 0.5,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Duplicate Probability"
+     },
+     "delayed_probability": {
+      "anyOf": [
+       {
+        "type": "number",
+        "maximum": 0.5,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Delayed Probability"
+     },
+     "missing_probability": {
+      "anyOf": [
+       {
+        "type": "number",
+        "maximum": 0.5,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Missing Probability"
+     }
+    },
+    "type": "object",
+    "title": "SimulatorConfig"
+   },
+   "ValidationError": {
+    "properties": {
+     "loc": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        }
+       ]
+      },
+      "type": "array",
+      "title": "Location"
+     },
+     "msg": {
+      "type": "string",
+      "title": "Message"
+     },
+     "type": {
+      "type": "string",
+      "title": "Error Type"
+     },
+     "input": {
+      "title": "Input"
+     },
+     "ctx": {
+      "type": "object",
+      "title": "Context"
+     }
+    },
+    "type": "object",
+    "required": [
+     "loc",
+     "msg",
+     "type"
+    ],
+    "title": "ValidationError"
+   }
+  }
+ }
+}

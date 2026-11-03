@@ -1,0 +1,4 @@
+{"commit": "bdccb97",
+ "dirty": true,
+ "generated_at": "2026-11-03T13:37:09Z",
+ "runner": "scripts/collect_evidence.sh (same commands as .github/workflows/ci.yml)"}

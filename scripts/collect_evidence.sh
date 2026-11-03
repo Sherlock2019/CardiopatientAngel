@@ -9,7 +9,7 @@ mkdir -p "$EV"
 
 (cd backend && uv run pytest -q -p no:warnings --junitxml="../$EV/backend-junit.xml") | tail -1
 (cd frontend && npx vitest run --reporter=default --reporter=junit --outputFile.junit="../$EV/frontend-junit.xml") | grep -E "Tests " || true
-(cd frontend && PLAYWRIGHT_JUNIT_OUTPUT_NAME="../$EV/e2e-junit.xml" npx playwright test acknowledge-workflow --reporter=junit >/dev/null; echo "e2e exit $?")
+(cd frontend && PLAYWRIGHT_JUNIT_OUTPUT_NAME="../$EV/e2e-junit.xml" npx playwright test acknowledge-workflow mobile-checkin --reporter=junit >/dev/null; echo "e2e exit $?")
 
 (cd backend && uv run python -c "import json; from app.main import app; print(json.dumps(app.openapi(), indent=1))") > docs/engineering/api/openapi.json
 

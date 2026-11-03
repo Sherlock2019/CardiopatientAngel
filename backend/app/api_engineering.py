@@ -165,7 +165,7 @@ def lifecycle(db: Session = Depends(get_db), user: User = Depends(eng)):
     for suite in results["suites"].values():
         for c in (suite or {}).get("cases", []):
             status_by_test[c["name"]] = c["status"]
-    kids = FEATURE["knowledge"] + [FEATURE["incident"], FEATURE["adr"]["id"]]
+    kids = list(dict.fromkeys(FEATURE["knowledge"] + [FEATURE["incident"], FEATURE["adr"]["id"]]))
     recs = {r.knowledge_id: r for r in db.execute(select(KnowledgeRecord).where(KnowledgeRecord.knowledge_id.in_(kids))).scalars()}
     reuse = db.execute(select(func.count()).where(KnowledgeUse.event_type == "reused",
                                                   KnowledgeUse.knowledge_id.in_(FEATURE["knowledge"]))).scalar()

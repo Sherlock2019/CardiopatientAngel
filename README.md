@@ -2,114 +2,92 @@
 
 *From Cardiac Monitoring Data to Better Clinical Awareness and Care-Team Coordination.*
 
-A full-stack proof of concept for cardiology care teams: a nurse command center with a live alarm queue,
-patient drill-down, exposure-adjusted population alarm analytics, a cohort explorer, staffing insights,
-a deceased-vs-survivor outcome comparison, and a live device simulator.
+A healthcare product **and** engineering-delivery demonstration in three connected experiences:
 
-> **Synthetic data only. Not a medical device. Not HIPAA compliant.** All findings are descriptive associations
-> from generated data with intentionally injected patterns (see [ANALYTICS_METHODS.md](ANALYTICS_METHODS.md)).
-> Nothing here recommends treatment, infers medication causality or assigns clinical urgency.
+| | Experience | Built with | What it shows |
+|---|---|---|---|
+| **A** | Patient mobile app | React Native + TypeScript (Expo; web build included) | Older-adult accessible check-ins, trends, medication reminders, coaching |
+| **B** | Nurse & doctor portal | React + TypeScript | Live Command Center, Patient 360, exposure-adjusted Risk Analytics, Cohort Explorer, staffing, devices |
+| **C** | Engineering leadership | React + FastAPI + repo docs | Engineering Hub, 7-stage lifecycle with real test evidence, Knowledge Hub with reviewed, cited knowledge |
+
+The monitoring pipeline is reusable across health IoT products: each device is a profile plus an adapter
+([docs/ADDING_A_DEVICE.md](docs/ADDING_A_DEVICE.md)).
+
+> **Synthetic data only. Not a medical device. Not HIPAA compliant.** Analytics are descriptive, exposure-adjusted
+> associations from generated data with documented injected patterns; they are not clinical risk predictions.
 
 ![Command Center](docs/screenshots/01-command-center.png)
 
-**One platform, many health IoT products.** CardioWatch is the cardiology app and a reusable monitoring pipeline:
-bedside, telemetry, ECG patch, cuffless BP monitor and biosensor ring are device profiles on the same pipeline, and a
-new product is added as a profile plus an adapter ([docs/ADDING_A_DEVICE.md](docs/ADDING_A_DEVICE.md)).
-
-- Architecture, integration, AWS, data pipeline, edge AI, regulatory map: [docs/architecture.html](docs/architecture.html)
-- POC-to-market delivery pack (roadmap, backlog, risks, release gate, test evidence): [docs/delivery/](docs/delivery/README.md)
-
-## Quick start (Docker — everything)
+## Start
 
 ```bash
-docker compose up --build
+./start.sh                 # build + run everything with Docker Compose, wait until healthy, print URLs
 ```
 
-| What | URL |
+| Service | URL |
 |---|---|
-| Web app | http://localhost:5180 |
-| API | http://localhost:8010 |
-| OpenAPI docs | http://localhost:8010/docs |
-| Health | http://localhost:8010/health |
+| Clinical portal + Engineering Hub | http://localhost:5180 |
+| Patient mobile app (web build) | http://localhost:8081 |
+| API + OpenAPI docs | http://localhost:8010/docs |
 
-On first start the backend runs `alembic upgrade head` and seeds the synthetic dataset (≈30 s).
-Pick a demo account on the login screen (no passwords — a demo identity switcher):
+Demo accounts are on the login screen (no passwords): nurses, doctor, admin (clinical) · engineering lead, engineer
+(no patient data) · synthetic patient (mobile app). Other commands: `./start.sh --stop | --logs | --status | --reset-data`.
 
-| Account | Role | Can |
-|---|---|---|
-| RN A. Moreau / RN G. Silva | nurse | view patients & alarms, acknowledge / review alarms, analytics |
-| Dr. R. Chen | doctor | same as nurse + audit log |
-| Admin | admin | simulator control, settings, audit log (no alarm handling) |
-
-## Local development (without building images)
+### On AWS EC2
 
 ```bash
-docker compose up -d db                       # PostgreSQL on 127.0.0.1:55440
+# Amazon Linux 2023 or Ubuntu, t3.medium or larger (image builds need ~4 GB RAM), 20 GB disk
+git clone git@github.com:Sherlock2019/CardiopatientAngel.git && cd CardiopatientAngel
+./start.sh --install        # installs Docker + Compose if missing (sudo), then builds and starts
+```
 
-cd backend
-uv sync
-uv run alembic upgrade head
-uv run python -m app.seed --reset             # 1,000 patients, 90 days
+On EC2 the launcher detects the instance (IMDSv2), binds the web, mobile and API ports on all interfaces and prints
+the public URLs. **Open inbound TCP 5180, 8081 and 8010 in the Security Group for your own IP only** — the demo has
+an identity switcher, not real authentication. PostgreSQL stays bound to localhost. If `--install` just added you to
+the `docker` group, the script uses `sudo docker` for that session. Secrets are generated into `.env` (not committed).
+
+## Develop and test without Docker images
+
+```bash
+docker compose up -d db
+cd backend && uv sync && uv run alembic upgrade head && uv run python -m app.seed --reset
 uv run uvicorn app.main:app --port 8010 --reload
-
-cd ../frontend
-npm install
-npm run dev                                   # http://localhost:5180 (proxies /api to :8010)
+cd ../frontend && npm install && npm run dev          # :5180, proxies /api to :8010
+cd ../mobile && npm install && EXPO_PUBLIC_API_URL=http://localhost:8010 npx expo start --web   # :8081
 ```
 
-On WSL, if the Vite dev server stalls on first load, serve a build instead: `npm run build && npx vite preview --port 5180`.
+| Suite | Command | Result at the last evidence run |
+|---|---|---|
+| Backend (pytest, PostgreSQL) | `cd backend && uv run pytest` | 47 passed |
+| Frontend (Vitest) | `cd frontend && npm test` | 13 passed |
+| End to end (Playwright) | `cd frontend && npx playwright test acknowledge-workflow mobile-checkin` | 2 passed |
 
-## Tests
+`scripts/collect_evidence.sh` runs all suites, writes JUnit XML to `docs/delivery/evidence/` and regenerates the
+OpenAPI file; the Engineering Hub and Lifecycle pages display those results. CI: `.github/workflows/ci.yml`.
 
-```bash
-cd backend && uv run pytest                   # 33 tests: APIs, aggregation accuracy, exposure, duplicates, missing and
-                                              # implausible data, RBAC, audit hash chain, devices, outbox, generator
-cd frontend && npm test                       # 12 tests: rendering, filters, drill-down, loading/empty/error, charts, devices
-cd frontend && npx playwright test acknowledge-workflow   # E2E (app must be running on :5180)
-```
+## Documentation
 
-The backend suite uses a separate database `cardiowatch_test` (created by `scripts/init-test-db.sql`;
-override with `TEST_DATABASE_URL`). CI runs both suites (`.github/workflows/ci.yml`).
-
-**Screenshots** are reproducible: with the app running, `cd frontend && npm run screenshots` writes `docs/screenshots/*.png`.
-
-## What's in the box
-
-| Page | Highlights |
+| Area | Documents |
 |---|---|
-| Command Center | 6 KPIs, live alarm queue (severity → unacknowledged → oldest), alarms/hour, by-unit, **deceased vs. discharged-alive comparison** by age, disease, treatment, medication, unit, sex and critical-alarm burden, with mortality 95% CIs |
-| Live Alarms | filter/sort, acknowledge, expandable *Operational Attention Indicator — Demo Only* factors, live SSE updates |
-| Patients / Patient detail | registry search; demographics, vitals trends with demo limits, clinical timeline (diagnoses, medications, treatments), alarm timeline with acknowledge + review/resolve, review history |
-| Risk Analytics | the 7 required charts (age, pathology, treatment, heatmap with timezone, age × pathology, medication × alarm type, trends); every chart has a table view |
-| Cohort Explorer | combine 9 filter types, time-valid exposure, reference cohort, weekly trend, drill-down to patients |
-| Staffing Insights | by shift, by hour, by unit with peak windows, live backlog, descriptive insight sentences |
-| Devices & Integrations | device profiles (product templates with LOINC/UCUM signals and alarm rules), fleet health (offline, battery, firmware), integration outbox to the virtual-care platform |
-| Data Simulator | configurable live device stream (abnormal / duplicate / delayed / signal-loss rates, falls, battery drain) |
-| Settings | display timezone, repeat window, cohort-size thresholds, attention-indicator weights, injected-pattern notes, audit log |
+| Interview walkthrough | [docs/engineering/INTERVIEW_DEMO.md](docs/engineering/INTERVIEW_DEMO.md) (5-minute and 7-minute scripts) |
+| Architecture | [SYSTEM_ARCHITECTURE](docs/engineering/SYSTEM_ARCHITECTURE.md) · [ARCHITECTURE](ARCHITECTURE.md) · [diagrams](docs/architecture.html) · [ADRs](docs/adr/) · [AWS_DEPLOYMENT](docs/engineering/AWS_DEPLOYMENT.md) · [OpenAPI](docs/engineering/api/openapi.json) |
+| Delivery | [REQUIREMENTS](docs/engineering/REQUIREMENTS.md) · [TEAM_STRUCTURE](docs/engineering/TEAM_STRUCTURE.md) · [SPRINT_PLAN](docs/engineering/SPRINT_PLAN.md) · [roadmap & backlog](docs/delivery/) · [CLIENT_COLLABORATION](docs/engineering/CLIENT_COLLABORATION.md) · [HIRING](docs/engineering/HIRING.md) |
+| Quality | [ENGINEERING_STANDARDS](docs/engineering/ENGINEERING_STANDARDS.md) · [TEST_PLAN](docs/engineering/TEST_PLAN.md) · [TEST_EVIDENCE](docs/delivery/TEST_EVIDENCE.md) · [PR template](.github/pull_request_template.md) |
+| Security | [SECURITY](SECURITY.md) · [SECURITY_COMPLIANCE](docs/engineering/SECURITY_COMPLIANCE.md) |
+| Operations | [DEPLOYMENT](docs/engineering/DEPLOYMENT.md) · [RUNBOOK](docs/engineering/RUNBOOK.md) · [INCIDENT_POSTMORTEM](docs/engineering/INCIDENT_POSTMORTEM.md) |
+| Knowledge | [KNOWLEDGE_GOVERNANCE](docs/engineering/KNOWLEDGE_GOVERNANCE.md) · [records](docs/knowledge/) |
+| Analytics | [ANALYTICS_METHODS](ANALYTICS_METHODS.md) · [DEMO_SCRIPT](DEMO_SCRIPT.md) |
 
-## API
+## Implemented vs planned
 
-`GET /health` · `GET /api/dashboard/summary` · `GET /api/patients` · `GET /api/patients/{id}` ·
-`GET /api/patients/{id}/measurements` · `GET /api/patients/{id}/alarms` · `GET /api/alarms` ·
-`POST /api/alarms/{id}/acknowledge` · `POST /api/alarms/{id}/resolve` ·
-`GET /api/analytics/{by-age,by-pathology,by-treatment,by-medication,age-pathology,hourly-heatmap,cohorts,trends,staffing,outcomes}` ·
-`POST /api/simulator/{start,stop}` · `GET /api/simulator/status` · `GET /api/stream` (SSE) ·
-`POST /api/ingest/measurements` · `GET/PUT /api/settings` · `GET /api/audit` · `POST /api/auth/login`.
-Full schema at `/docs`.
-
-## Repository layout
-
-```
-backend/   FastAPI app (app/), Alembic migrations, synthetic generator (app/seed.py), pytest suite
-frontend/  React + TS + Vite + Tailwind + Recharts + TanStack Query; Vitest + Playwright
-docs/      screenshots
-```
-
-See [ARCHITECTURE.md](ARCHITECTURE.md), [ANALYTICS_METHODS.md](ANALYTICS_METHODS.md), [SECURITY.md](SECURITY.md), [DEMO_SCRIPT.md](DEMO_SCRIPT.md).
+**Implemented and tested:** everything listed above as running — patient app, portal, Engineering Hub, lifecycle
+trace, knowledge workflow with redaction/approval/citations, RBAC with engineers isolated from PHI, hash-chained audit,
+outbox integration, device profiles, simulator, Docker Compose and `start.sh`.
+**Planned / documented only:** SSO + MFA, FHIR R4 facade, SQS + DLQ, AWS production deployment, pgvector embeddings
+and optional LLM for the knowledge assistant, native app-store builds. Approvals, the release record and incidents in
+the docs are **simulated examples**; code, tests, test results and alert evaluations are real.
 
 ## How this was built
 
-Built with an AI coding assistant (Claude Code) from a written specification, as a working vertical slice first
-(synthetic data → API → dashboard), then analytics, simulator, security controls and tests. Deliberate POC
-simplifications are listed under *Known limitations* in [ARCHITECTURE.md](ARCHITECTURE.md).
-The deceased-vs-survivor comparison was added on request; it is descriptive only, by design.
+Built with an AI coding assistant (Claude Code) from written specifications, iterating as a working vertical slice
+first (synthetic data → API → dashboard), then analytics, devices, security, the engineering layer and the mobile app.

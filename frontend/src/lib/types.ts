@@ -3,7 +3,8 @@ export type Severity = "critical" | "warning" | "advisory";
 export interface User {
   username: string;
   display_name: string;
-  role: "nurse" | "doctor" | "admin";
+  role: "nurse" | "doctor" | "admin" | "eng_lead" | "engineer" | "patient";
+  patient_id?: string | null;
   unit: string | null;
   permissions: string[];
 }

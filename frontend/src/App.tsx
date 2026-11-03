@@ -1,7 +1,10 @@
 import { useEffect } from "react";
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
-import { Activity, BellRing, Cpu, FlaskConical, LayoutDashboard, LogOut, Settings as Cog, Users, UsersRound, BarChart3, Radio, Watch } from "lucide-react";
+import { Activity, BellRing, BookOpen, Cpu, FlaskConical, GitBranch, LayoutDashboard, LogOut, Settings as Cog, Users, UsersRound, BarChart3, Radio, Watch, Wrench } from "lucide-react";
 import Devices from "./pages/Devices";
+import EngineeringHub from "./pages/EngineeringHub";
+import Lifecycle from "./pages/Lifecycle";
+import KnowledgeHub from "./pages/KnowledgeHub";
 import { useAuth } from "./lib/auth";
 import { LiveProvider, useLive } from "./lib/live";
 import { useApi } from "./lib/api";
@@ -19,16 +22,37 @@ import Simulator from "./pages/Simulator";
 import Settings from "./pages/Settings";
 
 const NAV = [
-  { to: "/", label: "Command Center", icon: LayoutDashboard },
-  { to: "/patients", label: "Patients", icon: Users },
-  { to: "/alarms", label: "Live Alarms", icon: BellRing },
-  { to: "/analytics", label: "Risk Analytics", icon: BarChart3 },
-  { to: "/cohorts", label: "Cohort Explorer", icon: FlaskConical },
-  { to: "/staffing", label: "Staffing Insights", icon: UsersRound },
-  { to: "/devices", label: "Devices & Integrations", icon: Watch },
-  { to: "/simulator", label: "Data Simulator", icon: Cpu },
-  { to: "/settings", label: "Settings", icon: Cog },
+  { to: "/", label: "Command Center", icon: LayoutDashboard, perm: "view_clinical", group: "Clinical operations" },
+  { to: "/patients", label: "Patients", icon: Users, perm: "view_clinical", group: "Clinical operations" },
+  { to: "/alarms", label: "Live Alarms", icon: BellRing, perm: "view_clinical", group: "Clinical operations" },
+  { to: "/analytics", label: "Risk Analytics", icon: BarChart3, perm: "view_analytics", group: "Clinical operations" },
+  { to: "/cohorts", label: "Cohort Explorer", icon: FlaskConical, perm: "view_analytics", group: "Clinical operations" },
+  { to: "/staffing", label: "Staffing Insights", icon: UsersRound, perm: "view_analytics", group: "Clinical operations" },
+  { to: "/devices", label: "Devices & Integrations", icon: Watch, perm: "view_clinical", group: "Clinical operations" },
+  { to: "/simulator", label: "Data Simulator", icon: Cpu, perm: "view_clinical", group: "Clinical operations" },
+  { to: "/engineering", label: "Engineering Hub", icon: Wrench, perm: "view_engineering", group: "Engineering leadership" },
+  { to: "/lifecycle", label: "Engineering Lifecycle", icon: GitBranch, perm: "view_engineering", group: "Engineering leadership" },
+  { to: "/knowledge", label: "Knowledge Hub", icon: BookOpen, perm: "view_knowledge", group: "Engineering leadership" },
+  { to: "/settings", label: "Settings", icon: Cog, perm: "view_clinical", group: "Clinical operations" },
 ];
+
+function Home() {
+  const { can } = useAuth();
+  if (can("view_clinical")) return <CommandCenter />;
+  if (can("view_engineering")) return <Navigate to="/engineering" replace />;
+  return <PatientLanding />;
+}
+
+function PatientLanding() {
+  const mobile = `${location.protocol}//${location.hostname}:8081`;
+  return (
+    <div className="mx-auto max-w-lg space-y-3 py-10 text-center">
+      <h1 className="text-xl font-bold">Patient accounts use the mobile app</h1>
+      <p className="text-sm text-ink-2">The clinical portal is for care teams. Open the CardioWatch patient app to see your trends and submit today's check-in.</p>
+      <a className="inline-block rounded-md bg-brand px-4 py-2 text-sm font-medium text-white" href={mobile}>Open the patient app</a>
+    </div>
+  );
+}
 
 function LiveDot() {
   const { connected } = useLive();
@@ -41,7 +65,8 @@ function LiveDot() {
 }
 
 function Shell() {
-  const { user, logout } = useAuth();
+  const { user, logout, can } = useAuth();
+  const nav = NAV.filter((n) => can(n.perm));
   const settings = useApi<{ display_timezone: string }>(["settings"], "/api/settings");
   useEffect(() => {
     if (settings.data) setDisplayTz(settings.data.display_timezone);
@@ -61,12 +86,21 @@ function Shell() {
               <div className="text-[10px] leading-tight text-muted">Cardiology monitoring</div>
             </div>
           </div>
-          <nav aria-label="Main" className="flex-1 space-y-0.5 px-2">
-            {NAV.map(({ to, label, icon: Icon }) => (
-              <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => cn("flex items-center gap-2.5 rounded-md px-3 py-2 text-sm", isActive ? "bg-brand-soft font-semibold text-brand-dark" : "text-ink-2 hover:bg-black/5")}>
-                <Icon size={16} aria-hidden /> {label}
-              </NavLink>
-            ))}
+          <nav aria-label="Main" className="flex-1 space-y-0.5 overflow-y-auto px-2">
+            {["Clinical operations", "Engineering leadership"].map((group) => {
+              const items = nav.filter((n) => n.group === group);
+              if (!items.length) return null;
+              return (
+                <div key={group} className="pb-2">
+                  <div className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wide text-muted">{group}</div>
+                  {items.map(({ to, label, icon: Icon }) => (
+                    <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => cn("flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm", isActive ? "bg-brand-soft font-semibold text-brand-dark" : "text-ink-2 hover:bg-black/5")}>
+                      <Icon size={16} aria-hidden /> {label}
+                    </NavLink>
+                  ))}
+                </div>
+              );
+            })}
           </nav>
           <div className="border-t border-black/10 p-3 text-xs">
             <div className="font-medium">{user?.display_name}</div>
@@ -77,19 +111,22 @@ function Shell() {
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex items-center justify-between gap-3 border-b border-black/10 bg-white px-4 py-2 md:px-6">
             <nav aria-label="Main (compact)" className="flex gap-1 overflow-x-auto md:hidden">
-              {NAV.map(({ to, icon: Icon, label }) => (
+              {nav.map(({ to, icon: Icon, label }) => (
                 <NavLink key={to} to={to} end={to === "/"} aria-label={label} className={({ isActive }) => cn("rounded p-2", isActive ? "bg-brand-soft text-brand-dark" : "text-ink-2")}><Icon size={16} /></NavLink>
               ))}
             </nav>
             <p className="hidden truncate text-xs text-muted md:block">From Cardiac Monitoring Data to Better Clinical Awareness and Care-Team Coordination.</p>
             <div className="flex items-center gap-4">
               <span className="text-xs text-muted">Times in {settings.data?.display_timezone ?? "…"}</span>
-              <LiveDot />
+              {can("view_clinical") && <LiveDot />}
             </div>
           </header>
           <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
             <Routes>
-              <Route path="/" element={<CommandCenter />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/engineering" element={<EngineeringHub />} />
+              <Route path="/lifecycle" element={<Lifecycle />} />
+              <Route path="/knowledge" element={<KnowledgeHub />} />
               <Route path="/patients" element={<Patients />} />
               <Route path="/patients/:id" element={<PatientDetail />} />
               <Route path="/alarms" element={<LiveAlarms />} />
@@ -113,7 +150,7 @@ export default function App() {
   if (loading) return <Loading label="Restoring session…" />;
   if (!user) return <Login />;
   return (
-    <LiveProvider enabled={!!user}>
+    <LiveProvider enabled={!!user && user.permissions.includes("view_clinical")}>
       <Shell />
     </LiveProvider>
   );

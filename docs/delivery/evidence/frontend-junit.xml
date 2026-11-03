@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="13" failures="0" errors="0" time="2.51">
+    <testsuite name="src/test/app.test.tsx" timestamp="2026-11-03T13:37:05.021Z" hostname="ubuntu-e" tests="8" failures="0" errors="0" skipped="0" time="0.853987755">
+        <testcase classname="src/test/app.test.tsx" name="Command Center &gt; renders KPIs, the alarm queue and the outcome comparison" time="0.333559877">
+            <system-err>
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/test/app.test.tsx" name="Command Center &gt; switches the outcome comparison dimension" time="0.110783613">
+            <system-err>
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/test/app.test.tsx" name="Command Center &gt; shows an empty state when there are no active alarms" time="0.059000222">
+            <system-err>
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/test/app.test.tsx" name="Command Center &gt; shows loading and then an error state when the API fails" time="0.045170095">
+            <system-err>
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/test/app.test.tsx" name="Command Center &gt; drills down from an alarm to the patient" time="0.070306621">
+            <system-err>
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/test/app.test.tsx" name="Command Center &gt; expands the demo attention indicator factors" time="0.09007759">
+            <system-err>
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/test/app.test.tsx" name="Command Center &gt; acknowledges an alarm via the API" time="0.070447588">
+            <system-err>
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/test/app.test.tsx" name="Live Alarms filters &gt; sends the selected severity and status to the API" time="0.072675128">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/test/charts.test.tsx" timestamp="2026-11-03T13:37:05.027Z" hostname="ubuntu-e" tests="3" failures="0" errors="0" skipped="0" time="0.159648622">
+        <testcase classname="src/test/charts.test.tsx" name="chart building blocks &gt; ChartCard toggles between chart and table views" time="0.147789618">
+        </testcase>
+        <testcase classname="src/test/charts.test.tsx" name="chart building blocks &gt; sequential colour scale maps 0..max onto the ramp" time="0.000553715">
+        </testcase>
+        <testcase classname="src/test/charts.test.tsx" name="chart building blocks &gt; severity badges carry a text label" time="0.009678163">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/test/devices.test.tsx" timestamp="2026-11-03T13:37:05.029Z" hostname="ubuntu-e" tests="1" failures="0" errors="0" skipped="0" time="0.302904634">
+        <testcase classname="src/test/devices.test.tsx" name="shows fleet health, the device list and the integration outbox" time="0.301924346">
+            <system-err>
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+            </system-err>
+        </testcase>
+    </testsuite>
+    <testsuite name="src/test/knowledge.test.tsx" timestamp="2026-11-03T13:37:05.030Z" hostname="ubuntu-e" tests="1" failures="0" errors="0" skipped="0" time="0.282495861">
+        <testcase classname="src/test/knowledge.test.tsx" name="asks the assistant and shows citations, confidence and non-guidance separately" time="0.28142262">
+            <system-err>
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+            </system-err>
+        </testcase>
+    </testsuite>
+</testsuites>

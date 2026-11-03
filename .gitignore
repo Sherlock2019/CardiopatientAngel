@@ -8,3 +8,7 @@ test-results/
 playwright-report/
 *.tsbuildinfo
 .env
+mobile/node_modules/
+mobile/dist/
+mobile/.expo/
+frontend/e2e/*.png

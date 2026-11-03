@@ -1,12 +1,16 @@
 # Test evidence
 
-Run on 2026-11-03 at commit `f352bdb` (raw output in [evidence/](evidence/)).
+Latest run: see [evidence/meta.json](evidence/meta.json) for the commit and time; JUnit files in [evidence/](evidence/)
+are produced by `scripts/collect_evidence.sh` and shown live in the Engineering Hub (Quality tab).
 
-| Suite | Result |
+| Suite | Result (latest run) |
 |---|---|
-| Backend (pytest, PostgreSQL 16) | **33 passed**, 0 failed |
-| Frontend (Vitest + Testing Library) | **12 passed**, 0 failed |
-| End-to-end (Playwright, Chromium) | **1 passed**: alarm → patient → acknowledge → status + audit verified |
+| Backend (pytest, PostgreSQL 16) | **47 passed**, 0 failed |
+| Frontend (Vitest + Testing Library) | **13 passed**, 0 failed |
+| End-to-end (Playwright, Chromium) | **2 passed**: nurse acknowledge workflow with audit; patient mobile check-in visible to the doctor |
+
+The traceability table below was written at commit `f352bdb` (33 backend tests); later suites add knowledge,
+engineering, patient-app and device tests (REQ-KNW-01, REQ-MOB-01).
 
 ## Requirement → test traceability
 
