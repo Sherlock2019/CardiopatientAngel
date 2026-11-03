@@ -8,6 +8,7 @@ import KnowledgeHub from "./pages/KnowledgeHub";
 import { useAuth } from "./lib/auth";
 import { LiveProvider, useLive } from "./lib/live";
 import { useApi } from "./lib/api";
+import { useMeta } from "./lib/meta";
 import { setDisplayTz } from "./lib/format";
 import { Loading, cn } from "./components/ui";
 import Login from "./pages/Login";
@@ -44,7 +45,8 @@ function Home() {
 }
 
 function PatientLanding() {
-  const mobile = `${location.protocol}//${location.hostname}:8081`;
+  const meta = useMeta();
+  const mobile = `${location.protocol}//${location.hostname}:${meta.data?.mobile_port ?? 8081}`;
   return (
     <div className="mx-auto max-w-lg space-y-3 py-10 text-center">
       <h1 className="text-xl font-bold">Patient accounts use the mobile app</h1>

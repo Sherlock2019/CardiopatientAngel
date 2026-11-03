@@ -1,6 +1,7 @@
 """Core REST API: auth, dashboard, patients, alarms, ingestion, simulator, live stream, settings, audit."""
 import asyncio
 import json
+import os
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo, available_timezones
 
@@ -79,6 +80,7 @@ def meta():
         "device_types": list(d.DEVICE_TYPES),
         "device_info": d.DEVICE_INFO,
         "technical_alarms": sorted(d.TECHNICAL_ALARMS),
+        "mobile_port": int(os.getenv("MOBILE_PORT", "8081")),
     }
 
 

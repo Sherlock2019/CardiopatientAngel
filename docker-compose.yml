@@ -31,6 +31,7 @@ services:
       HOSPITAL_TZ: ${HOSPITAL_TZ:-America/New_York}
       SEED_RANDOM: ${SEED_RANDOM:-42}
       REPO_DIR: /repo
+      MOBILE_PORT: ${MOBILE_PORT:-8081}
     volumes:
       # read-only repository view for the Engineering Hub (docs, ADRs, test evidence, source traceability)
       - ./docs:/repo/docs:ro

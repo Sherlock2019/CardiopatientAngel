@@ -1,10 +1,12 @@
 FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+# uv binary instead of `pip install uv`, and uv instead of pip for dependencies (much faster on small instances)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 WORKDIR /app
-RUN pip install --no-cache-dir uv
-COPY pyproject.toml uv.lock* ./
-RUN uv export --no-dev --no-hashes -o requirements.txt 2>/dev/null || true; \
-    if [ -s requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; else pip install --no-cache-dir .; fi
+COPY pyproject.toml uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv export --frozen --no-dev --no-hashes -o requirements.txt && \
+    uv pip install --system -r requirements.txt
 COPY . .
 RUN useradd --create-home appuser
 USER appuser

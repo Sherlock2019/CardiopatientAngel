@@ -16,6 +16,54 @@ The monitoring pipeline is reusable across health IoT products: each device is a
 > **Synthetic data only. Not a medical device. Not HIPAA compliant.** Analytics are descriptive, exposure-adjusted
 > associations from generated data with documented injected patterns; they are not clinical risk predictions.
 
+## Architecture at a glance
+
+```text
+┌─ FRONTENDS (3 experiences) ──────────────────────────────────────────────────────────┐
+│ A  Patient app      React Native (Expo)   trends · medicines · daily check-in        │
+│                     :8081                 sees own record only                       │
+│ B  Clinical portal  React + TypeScript    alarm queue · Patient 360 · analytics      │
+│                     :5180                 cohorts · staffing · devices               │
+│ C  Engineering Hub  React + repo docs     lifecycle · quality · ops · knowledge      │
+│                     :5180                 no access to patient data                  │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+                                      │  REST · SSE live alarms · OpenAPI
+                                      v
+┌─ BACKEND  FastAPI :8010  ·  server-side RBAC (6 roles)  ·  audit hash chain ─────────┐
+│                                                                                      │
+│ 1 DEVICES       2 INGEST          3 STORE          4 ANALYZE       5 REVIEW          │
+│ ECG patch   ─>  device profiles ─> PostgreSQL 16 ─> alarm rules  ─> alarm queue      │
+│ cuffless BP     idempotent keys   patients, dx,    adjusted rates  acknowledge       │
+│ ring, bedside   quality flags     readings, alarms cohorts, heatmap review           │
+│ simulator       plausible ranges  audit, knowledge staffing        consult           │
+│                                                        ^               │             │
+│                                                        └─ dispositions ┘             │
+│                                                         (false-alarm metrics)        │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+        │                          │                              │
+        v                          v                              v
+  PostgreSQL 16              Outbox events               Knowledge Hub
+  localhost only             -> virtual-care platform    redact · review · cite
+
+┌─ ENGINEERING DELIVERY LOOP ──────────────────────────────────────────────────────────┐
+│ requirements ─> ADRs ─> build + PR review ─> tests ─> CI + Docker ─> operate         │
+│      ^          pytest 47 · Vitest 13 · Playwright 2              alerts │           │
+│      └───────── Knowledge Hub: lessons are reviewed, cited, reused ──────┘           │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ KNOWLEDGE FLYWHEEL (seeded example) ────────────────────────────────────────────────┐
+│ incident ─> postmortem ─> ADR-003 + fix ─> regression test ─> KB-0001 ─> reuse       │
+│ duplicate    root cause:   natural keys    + alert ALR-001     approved   next       │
+│ alarms       retry ids     in ingest.py                        & cited    feature    │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ RUNTIME  ./start.sh  ->  Docker Compose (local or AWS EC2) ─────────────────────────┐
+│ browser ─> nginx :5180 (portal + hub) ──┐                                            │
+│ phone   ─> nginx :8081 (patient app)  ──┴─> FastAPI :8010 ─> PostgreSQL 16           │
+│ AWS path (documented): ECS/EKS · RDS · SQS · KMS · CloudWatch                        │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
 ![Command Center](docs/screenshots/01-command-center.png)
 
 ## Start

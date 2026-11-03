@@ -95,6 +95,23 @@ HOSPITAL_TZ=America/New_York
 EOF
   chmod 600 .env
 fi
+set -a; . ./.env; set +a
+
+# --- Ports: if another service already uses one, take the next free port and remember it in .env ---------
+port_busy() { ss -ltn 2>/dev/null | awk '{print $4}' | grep -Eq "[:.]$1\$"; }
+port_ours() { $DOCKER ps --filter "publish=$1" --format '{{.Names}}' 2>/dev/null | grep -q '^cardiowatch-'; }
+pick_port() {
+  local var=$1 want=${!1:-$2} p
+  p=$want
+  while port_busy "$p" && ! port_ours "$p"; do p=$((p + 1)); done
+  [ "$p" != "$want" ] && log "Port $want is used by another service; using $p for $var"
+  export "$var=$p"
+  if grep -q "^$var=" .env; then sed -i "s/^$var=.*/$var=$p/" .env; else echo "$var=$p" >> .env; fi
+}
+pick_port API_PORT 8010
+pick_port WEB_PORT 5180
+pick_port MOBILE_PORT 8081
+
 if [ "$PUBLIC" = 1 ] || { [ "$EC2" = 1 ] && [ -z "${BIND_ADDR:-}" ]; }; then export BIND_ADDR=0.0.0.0; else export BIND_ADDR="${BIND_ADDR:-127.0.0.1}"; fi
 HOST="${PUBLIC_HOST:-localhost}"; [ "$BIND_ADDR" = "127.0.0.1" ] && HOST=localhost
 export CORS_ORIGINS="http://${HOST}:${WEB_PORT:-5180},http://${HOST}:${MOBILE_PORT:-8081},http://localhost:5180,http://localhost:8081"
@@ -103,8 +120,18 @@ export CORS_ORIGINS="http://${HOST}:${WEB_PORT:-5180},http://${HOST}:${MOBILE_PO
 MEM_MB=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 4096)
 [ "$MEM_MB" -lt 3500 ] && log "Warning: ${MEM_MB} MB RAM. Image builds need ~4 GB (use t3.medium or larger, or add swap)."
 
-log "Building and starting containers (first run takes a few minutes)…"
-$COMPOSE up -d --build
+if [ "$MEM_MB" -lt 6000 ]; then
+  # Small instance: build one image at a time instead of three in parallel (avoids swap thrashing).
+  for svc in backend frontend mobile; do
+    log "Building $svc…"
+    $COMPOSE build "$svc"
+  done
+else
+  log "Building images…"
+  $COMPOSE build
+fi
+log "Starting containers…"
+$COMPOSE up -d
 
 log "Waiting for the API to become healthy (migrations + synthetic data seeding)…"
 for i in $(seq 1 120); do
@@ -119,7 +146,12 @@ if [ "$RESET" = 1 ]; then
 fi
 
 for port in "${WEB_PORT:-5180}" "${MOBILE_PORT:-8081}"; do
-  curl -fs -o /dev/null "http://127.0.0.1:${port}/" || die "Service on port ${port} is not answering."
+  # web containers start only after the API is healthy: give them up to a minute
+  for i in $(seq 1 30); do
+    curl -fs -o /dev/null "http://127.0.0.1:${port}/" && break
+    sleep 2
+    [ "$i" = 30 ] && { $COMPOSE ps; die "Service on port ${port} is not answering."; }
+  done
 done
 
 cat <<EOF
