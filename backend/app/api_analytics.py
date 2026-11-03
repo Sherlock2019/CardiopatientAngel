@@ -54,6 +54,11 @@ def by_age(c: Common = Depends(), user: User = Depends(viewer)):
     return {**c.meta(), "rows": an.by_age(c.F, c.w, c.units, c.alarm_types, c.severities)}
 
 
+@router.get("/by-device")
+def by_device(c: Common = Depends(), user: User = Depends(viewer)):
+    return {**c.meta(), "rows": an.by_device(c.F, c.w, c.units)}
+
+
 @router.get("/by-pathology")
 def by_pathology(c: Common = Depends(), user: User = Depends(viewer)):
     return {**c.meta(), "overlap_note": OVERLAP_NOTE,

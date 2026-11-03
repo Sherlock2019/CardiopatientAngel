@@ -46,11 +46,91 @@
 </head>
 <body>
 <main>
-  <h1>CardioWatch AI: product ecosystem</h1>
+  <h1>What we build: one platform, many health IoT products</h1>
+  <p class="lede">CardioWatch is the cardiology app <b>and</b> a reusable monitoring pipeline. Each health IoT product plugs in as a device profile
+    plus an adapter; ingestion, data quality, alarms, review, audit, analytics and integrations are shared, so the next product reuses all of it.</p>
+  <figure>
+    <svg viewBox="0 0 1240 520" role="img" aria-label="Health IoT products such as ECG patch, cuffless BP monitor, biosensor ring and bedside or telemetry monitors, plus future products like a smart scale, glucose meter or fall pendant, each connect through a device profile and an adapter into one shared pipeline: idempotent ingest, validation and quality flags, normalization to FHIR observations, alarm rules and queue, storage with audit and analytics, and outbox events. The pipeline serves the cardiology care-team portal, a patient coaching app, a virtual-care platform and the EHR.">
+      <defs>
+        <marker id="rarw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="mka" d="M0 0 L10 5 L0 10 z"/></marker>
+        <marker id="rarwK" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk" d="M0 0 L10 5 L0 10 z"/></marker>
+      </defs>
+      <text class="z" x="20" y="34">HEALTH IoT PRODUCTS</text>
+      <text class="z" x="280" y="34">PER-PRODUCT CONFIG</text>
+      <text class="z" x="530" y="34">SHARED PIPELINE · BUILT ONCE</text>
+      <text class="z" x="1000" y="34">APPS &amp; PARTNERS</text>
+
+      <rect class="box" x="20" y="50" width="210" height="52" rx="9"/><text class="t" x="125" y="81" text-anchor="middle">ECG patch</text>
+      <rect class="box" x="20" y="114" width="210" height="52" rx="9"/><text class="t" x="125" y="145" text-anchor="middle">Cuffless BP monitor</text>
+      <rect class="box" x="20" y="178" width="210" height="52" rx="9"/><text class="t" x="125" y="209" text-anchor="middle">Biosensor ring</text>
+      <rect class="box" x="20" y="242" width="210" height="52" rx="9"/><text class="t" x="125" y="273" text-anchor="middle">Bedside / telemetry</text>
+      <rect class="box" x="20" y="306" width="210" height="52" rx="9" style="stroke-dasharray:6 4"/><text class="t" x="125" y="330" text-anchor="middle">Smart scale</text><text class="s" x="125" y="347" text-anchor="middle">next product</text>
+      <rect class="box" x="20" y="370" width="210" height="52" rx="9" style="stroke-dasharray:6 4"/><text class="t" x="125" y="394" text-anchor="middle">Glucose meter</text><text class="s" x="125" y="411" text-anchor="middle">next product</text>
+      <rect class="box" x="20" y="434" width="210" height="52" rx="9" style="stroke-dasharray:6 4"/><text class="t" x="125" y="458" text-anchor="middle">Fall pendant</text><text class="s" x="125" y="475" text-anchor="middle">next product</text>
+
+      <line class="a" x1="230" y1="76" x2="277" y2="76" marker-end="url(#rarw)"/>
+      <line class="a" x1="230" y1="140" x2="277" y2="140" marker-end="url(#rarw)"/>
+      <line class="a" x1="230" y1="204" x2="277" y2="204" marker-end="url(#rarw)"/>
+      <line class="a" x1="230" y1="268" x2="277" y2="268" marker-end="url(#rarw)"/>
+      <line class="d" x1="230" y1="332" x2="277" y2="332"/>
+      <line class="d" x1="230" y1="396" x2="277" y2="396"/>
+      <line class="d" x1="230" y1="460" x2="277" y2="460"/>
+
+      <rect class="box" x="280" y="50" width="200" height="436" rx="12"/>
+      <text class="t" x="380" y="84" text-anchor="middle">Device profile</text>
+      <text class="s" x="380" y="104" text-anchor="middle">configuration, no code</text>
+      <text class="s" x="380" y="134" text-anchor="middle">signals · LOINC / UCUM</text>
+      <text class="s" x="380" y="154" text-anchor="middle">plausible ranges</text>
+      <text class="s" x="380" y="174" text-anchor="middle">allowed alarm rules</text>
+      <text class="s" x="380" y="194" text-anchor="middle">offline &amp; battery rules</text>
+      <text class="s" x="380" y="214" text-anchor="middle">firmware versions</text>
+      <line class="w" x1="300" y1="252" x2="460" y2="252" style="stroke-width:1"/>
+      <text class="t" x="380" y="290" text-anchor="middle">Adapter</text>
+      <text class="s" x="380" y="310" text-anchor="middle">small code per vendor</text>
+      <text class="s" x="380" y="340" text-anchor="middle">vendor cloud / SDK → API</text>
+      <text class="s" x="380" y="360" text-anchor="middle">unit conversion</text>
+      <text class="s" x="380" y="380" text-anchor="middle">device timestamps</text>
+      <text class="s" x="380" y="400" text-anchor="middle">model / firmware provenance</text>
+      <text class="s" x="380" y="440" text-anchor="middle">see docs/ADDING_A_DEVICE.md</text>
+
+      <line class="a" x1="480" y1="268" x2="527" y2="268" marker-end="url(#rarw)"/>
+
+      <rect class="zone" x="530" y="50" width="430" height="436" rx="14" style="stroke-dasharray:none;stroke-width:2"/>
+      <rect class="box" x="550" y="70" width="390" height="50" rx="9"/><text class="t" x="745" y="100" text-anchor="middle">Ingest · idempotent de-duplication</text>
+      <rect class="box" x="550" y="138" width="390" height="50" rx="9"/><text class="t" x="745" y="168" text-anchor="middle">Validate · missing / delayed / artifact flags</text>
+      <rect class="box" x="550" y="206" width="390" height="50" rx="9"/><text class="t" x="745" y="236" text-anchor="middle">Normalize → FHIR Observation</text>
+      <rect class="box" x="550" y="274" width="390" height="50" rx="9"/><text class="t" x="745" y="304" text-anchor="middle">Alarm rules · queue · acknowledgment</text>
+      <rect class="box" x="550" y="342" width="390" height="50" rx="9"/><text class="t" x="745" y="372" text-anchor="middle">Store · audit hash chain · analytics</text>
+      <rect class="box" x="550" y="410" width="390" height="50" rx="9"/><text class="t" x="745" y="440" text-anchor="middle">Outbox events → partner platforms</text>
+      <line class="w" x1="745" y1="120" x2="745" y2="135" marker-end="url(#rarwK)"/>
+      <line class="w" x1="745" y1="188" x2="745" y2="203" marker-end="url(#rarwK)"/>
+      <line class="w" x1="745" y1="256" x2="745" y2="271" marker-end="url(#rarwK)"/>
+      <line class="w" x1="745" y1="324" x2="745" y2="339" marker-end="url(#rarwK)"/>
+      <line class="w" x1="745" y1="392" x2="745" y2="407" marker-end="url(#rarwK)"/>
+      <rect class="tag" x="896" y="56" width="38" height="16" rx="8"/><text class="tagt" x="915" y="68" text-anchor="middle">POC</text>
+
+      <rect class="box" x="1000" y="70" width="220" height="70" rx="10"/>
+      <text class="t" x="1110" y="99" text-anchor="middle">Cardiology portal</text><text class="s" x="1110" y="119" text-anchor="middle">care teams · built in POC</text>
+      <rect class="box" x="1000" y="168" width="220" height="70" rx="10" style="stroke-dasharray:6 4"/>
+      <text class="t" x="1110" y="197" text-anchor="middle">Patient coaching app</text><text class="s" x="1110" y="217" text-anchor="middle">React Native · planned</text>
+      <rect class="box" x="1000" y="266" width="220" height="70" rx="10" style="stroke-dasharray:6 4"/>
+      <text class="t" x="1110" y="295" text-anchor="middle">Virtual-care platform</text><text class="s" x="1110" y="315" text-anchor="middle">video consult · events</text>
+      <rect class="box" x="1000" y="364" width="220" height="70" rx="10" style="stroke-dasharray:6 4"/>
+      <text class="t" x="1110" y="393" text-anchor="middle">EHR · other products</text><text class="s" x="1110" y="413" text-anchor="middle">FHIR R4 · new portals</text>
+      <line class="a" x1="960" y1="105" x2="997" y2="105" marker-end="url(#rarw)"/>
+      <line class="a" x1="960" y1="203" x2="997" y2="203" marker-end="url(#rarw)"/>
+      <line class="a" x1="960" y1="301" x2="997" y2="301" marker-end="url(#rarw)"/>
+      <line class="a" x1="960" y1="399" x2="997" y2="399" marker-end="url(#rarw)"/>
+    </svg>
+    <figcaption>Solid boxes run in the POC today; dashed boxes are the next products and consumers. Only the middle-left column changes per product:
+      a profile (data) and an adapter (a small amount of code). The cost of product number two is mostly regulatory and clinical validation, not re-engineering.</figcaption>
+  </figure>
+
+  <h1 style="margin-top:48px">Product ecosystem</h1>
   <p class="lede">The whole environment at a glance: two audiences, one secure backend, and two capability areas that feed it. The sections below zoom into each layer.</p>
 
   <figure>
-    <svg viewBox="0 0 900 440" role="img" aria-label="Product ecosystem: older adults use a mobile coaching app and doctors or care teams use a clinical web portal; both connect to a secure healthcare backend on AWS with APIs and patient data; the backend connects to cardiac integration with devices, EHR and APIs, and to AI and analytics producing clinician-reviewed insights.">
+    <svg viewBox="0 0 1180 440" role="img" aria-label="Product ecosystem: older adults use a mobile coaching app and doctors or care teams use a clinical web portal; both connect to a secure healthcare backend on AWS with APIs and patient data; the backend connects to cardiac integration with wearables, EHR and APIs, to AI and analytics producing clinician-reviewed insights, and to a virtual-care platform for video consults.">
       <rect class="box" x="60" y="30" width="300" height="104" rx="14"/>
       <text class="t" x="210" y="70" text-anchor="middle" style="font-size:17px">Older adults</text>
       <text class="s" x="210" y="94" text-anchor="middle" style="font-size:13px">Mobile coaching app</text>
@@ -68,8 +148,15 @@
 
       <rect class="box" x="60" y="306" width="300" height="104" rx="14"/>
       <text class="t" x="210" y="346" text-anchor="middle" style="font-size:17px">Cardiac integration</text>
-      <text class="s" x="210" y="370" text-anchor="middle" style="font-size:13px">Devices / EHR / APIs</text>
+      <text class="s" x="210" y="370" text-anchor="middle" style="font-size:13px">ECG patch · cuffless BP · ring · EHR</text>
       <text class="s" x="210" y="390" text-anchor="middle">simulated in POC · FHIR planned</text>
+
+      <rect class="box" x="880" y="172" width="270" height="96" rx="14" style="stroke-dasharray:6 4"/>
+      <text class="t" x="1015" y="206" text-anchor="middle" style="font-size:16px">Virtual-care platform</text>
+      <text class="s" x="1015" y="229" text-anchor="middle" style="font-size:13px">video consults · scheduling</text>
+      <text class="s" x="1015" y="249" text-anchor="middle">e.g. ITR telemedicine SaaS</text>
+      <line class="a" x1="652" y1="220" x2="877" y2="220" marker-end="url(#arwA)"/>
+      <text class="l" x="765" y="210" text-anchor="middle">consult.requested events</text>
 
       <rect class="box" x="540" y="306" width="300" height="104" rx="14"/>
       <text class="t" x="690" y="346" text-anchor="middle" style="font-size:17px">AI + analytics</text>
@@ -200,14 +287,14 @@
       <text class="t" x="1144" y="243" text-anchor="middle">Hospital EHR</text>
       <text class="s" x="1144" y="263" text-anchor="middle">FHIR R4 · SMART</text>
       <rect class="box" x="1062" y="334" width="164" height="72" rx="10" style="stroke-dasharray:6 4"/>
-      <text class="t" x="1144" y="363" text-anchor="middle">Cardiac devices</text>
-      <text class="s" x="1144" y="383" text-anchor="middle">monitors · wearables</text>
+      <text class="t" x="1144" y="363" text-anchor="middle">Device clouds</text>
+      <text class="s" x="1144" y="383" text-anchor="middle">ECG patch · BP · ring</text>
       <rect class="box" x="1062" y="484" width="164" height="72" rx="10" style="stroke-dasharray:6 4"/>
       <text class="t" x="1144" y="513" text-anchor="middle">Lab · pharmacy</text>
       <text class="s" x="1144" y="533" text-anchor="middle">HL7 v2 feeds</text>
       <rect class="box" x="1062" y="606" width="164" height="72" rx="10" style="stroke-dasharray:6 4"/>
-      <text class="t" x="1144" y="635" text-anchor="middle">HIE · registries</text>
-      <text class="s" x="1144" y="655" text-anchor="middle">regional exchange</text>
+      <text class="t" x="1144" y="635" text-anchor="middle">Virtual-care</text>
+      <text class="s" x="1144" y="655" text-anchor="middle">video consult platform</text>
 
       <!-- Frontend -> gateway -->
       <line class="a" x1="155" y1="146" x2="155" y2="197" marker-end="url(#iarwA)"/>
@@ -240,20 +327,22 @@
       <circle class="tag" cx="670" cy="172" r="10"/><text class="tagt" x="670" y="176" text-anchor="middle">3</text>
       <circle class="tag" cx="1040" cy="236" r="10"/><text class="tagt" x="1040" y="240" text-anchor="middle">4</text>
       <circle class="tag" cx="1046" cy="430" r="10"/><text class="tagt" x="1046" y="434" text-anchor="middle">5</text>
+      <circle class="tag" cx="1040" cy="626" r="10"/><text class="tagt" x="1040" y="630" text-anchor="middle">6</text>
     </svg>
     <figcaption>The portal and the mobile app use the platform's own REST API. Anything outside the platform (EHRs, devices, labs, exchanges, third-party
       apps) connects through standard FHIR R4 or through a dedicated adapter, so plugging in a new hospital system means adding a mapping or an
       adapter, not changing the core. Dashed boxes are external systems or optional plug-ins. Blue arrows carry patient and device data.</figcaption>
   </figure>
 
-  <h2>The five workflows</h2>
+  <h2>The six workflows</h2>
   <table>
     <tbody>
       <tr><td style="width:44px"><b>①</b></td><td><b>Daily check-in.</b> The patient app saves answers and metrics offline, syncs when online, and calls the REST API; domain services store observations and evaluate approved alert rules.</td></tr>
       <tr><td><b>②</b></td><td><b>Care-team alerts.</b> Workers raise an alert in PostgreSQL; the portal receives it live over SSE; a nurse acknowledges or reviews it, and every action is audited. <i>Built in the POC.</i></td></tr>
       <tr><td><b>③</b></td><td><b>Plug-in apps.</b> A SMART on FHIR app launches from the EHR and reads only what its OAuth scopes allow through the FHIR R4 API.</td></tr>
       <tr><td><b>④</b></td><td><b>EHR exchange.</b> The resource router pulls conditions and medications from the hospital EHR, and writes back clinician-reviewed care plans only with consent and provenance.</td></tr>
-      <tr><td><b>⑤</b></td><td><b>Devices and legacy feeds.</b> Monitor and wearable readings, plus HL7 v2 lab feeds, enter through adapters, are mapped to LOINC/UCUM, then queued, deduplicated and stored.</td></tr>
+      <tr><td><b>⑤</b></td><td><b>Devices and legacy feeds.</b> Device-cloud readings (ECG patch, cuffless BP, ring) plus HL7 v2 lab feeds enter through adapters, are mapped to LOINC/UCUM, then queued, deduplicated and stored. On-device AI events keep their model version as provenance. <i>Device fleet view built in the POC.</i></td></tr>
+      <tr><td><b>⑥</b></td><td><b>Virtual consult.</b> From an alarm, a clinician requests a video consult; a <code>consult.requested</code> event is written to the outbox in the same transaction and relayed to the virtual-care platform (bottom right). <i>Built in the POC.</i></td></tr>
     </tbody>
   </table>
 
@@ -307,7 +396,7 @@
       <text class="l" x="272" y="258">authorized requests · JWT role claims</text>
 
       <rect class="box" x="100" y="328" width="320" height="88" rx="10"/>
-      <text class="t" x="260" y="360" text-anchor="middle">FastAPI on ECS Fargate</text>
+      <text class="t" x="260" y="360" text-anchor="middle">FastAPI on ECS Fargate / EKS</text>
       <text class="s" x="260" y="381" text-anchor="middle">REST API · alarm queue · analytics</text>
       <text class="s" x="260" y="399" text-anchor="middle">server-side RBAC · audit writes</text>
       <rect class="tag" x="374" y="336" width="38" height="16" rx="8"/><text class="tagt" x="393" y="348" text-anchor="middle">POC</text>
@@ -494,6 +583,90 @@
   </table>
   <p class="lede" style="margin-top:14px"><b>ECG ≠ heart rate.</b> A heart-rate value is one number every few seconds. An ECG is a high-frequency waveform (hundreds of samples per second, per lead).
     It needs its own pipeline: chunked waveform storage (e.g. S3 segments indexed in the database), specialized and validated algorithms, and a different viewer.</p>
+
+  <h1 style="margin-top:48px">Edge-to-cloud AI loop</h1>
+  <p class="lede">How on-device AI (TinyML on the wearable) and cloud AI fit around the clinical workflow without ever taking the decision away from clinicians.</p>
+  <figure>
+    <svg viewBox="0 0 1240 380" role="img" aria-label="Edge-to-cloud AI loop: a wearable runs an on-device classifier and sends events with the model version to the device cloud; CardioWatch ingests them keeping provenance and routes them to clinician review; review dispositions become labels in a de-identified, consented data lake; models are trained and clinically validated, registered, and shipped back to devices as signed over-the-air updates under change control.">
+      <defs>
+        <marker id="earw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="mka" d="M0 0 L10 5 L0 10 z"/></marker>
+        <marker id="earwD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mkd" d="M0 0 L10 5 L0 10 z"/></marker>
+      </defs>
+      <rect class="box" x="20" y="40" width="190" height="100" rx="10"/>
+      <text class="t" x="115" y="70" text-anchor="middle">Wearable (edge)</text>
+      <text class="s" x="115" y="92" text-anchor="middle">on-device classifier</text>
+      <text class="s" x="115" y="109" text-anchor="middle">TinyML · versioned model</text>
+      <text class="s" x="115" y="126" text-anchor="middle">works offline</text>
+
+      <rect class="box" x="262" y="40" width="190" height="100" rx="10"/>
+      <text class="t" x="357" y="70" text-anchor="middle">Device cloud / SDK</text>
+      <text class="s" x="357" y="92" text-anchor="middle">events + raw segments</text>
+      <text class="s" x="357" y="109" text-anchor="middle">consent · device identity</text>
+
+      <rect class="box" x="504" y="40" width="190" height="100" rx="10"/>
+      <text class="t" x="599" y="70" text-anchor="middle">CardioWatch</text>
+      <text class="s" x="599" y="92" text-anchor="middle">ingest with provenance</text>
+      <text class="s" x="599" y="109" text-anchor="middle">alarm queue · clinician review</text>
+      <rect class="tag" x="648" y="46" width="38" height="16" rx="8"/><text class="tagt" x="667" y="58" text-anchor="middle">POC</text>
+
+      <rect class="box" x="746" y="40" width="190" height="100" rx="10"/>
+      <text class="t" x="841" y="70" text-anchor="middle">De-identified data lake</text>
+      <text class="s" x="841" y="92" text-anchor="middle">S3 · consented data only</text>
+      <text class="s" x="841" y="109" text-anchor="middle">labels from dispositions</text>
+
+      <rect class="box" x="988" y="40" width="232" height="100" rx="10"/>
+      <text class="t" x="1104" y="70" text-anchor="middle">Training &amp; validation</text>
+      <text class="s" x="1104" y="92" text-anchor="middle">PyTorch / TensorFlow pipelines</text>
+      <text class="s" x="1104" y="109" text-anchor="middle">clinical validation</text>
+      <text class="s" x="1104" y="126" text-anchor="middle">model registry</text>
+
+      <line class="a" x1="210" y1="90" x2="259" y2="90" marker-end="url(#earw)"/>
+      <line class="a" x1="452" y1="90" x2="501" y2="90" marker-end="url(#earw)"/>
+      <line class="a" x1="694" y1="90" x2="743" y2="90" marker-end="url(#earw)"/>
+      <line class="a" x1="936" y1="90" x2="985" y2="90" marker-end="url(#earw)"/>
+      <text class="l" x="235" y="30" text-anchor="middle">event + model v</text>
+      <text class="l" x="477" y="30" text-anchor="middle">FHIR / API</text>
+      <text class="l" x="719" y="30" text-anchor="middle">reviewed labels</text>
+      <text class="l" x="961" y="30" text-anchor="middle">datasets</text>
+
+      <polyline class="d" points="1104,140 1104,190 115,190 115,143" marker-end="url(#earwD)"/>
+      <text class="l" x="610" y="182" text-anchor="middle">signed over-the-air model / firmware update · only under change control</text>
+
+      <rect class="box" x="20" y="232" width="380" height="96" rx="10"/>
+      <text class="t" x="210" y="262" text-anchor="middle">Provenance on every event</text>
+      <text class="s" x="210" y="284" text-anchor="middle">device, firmware and model version stored with the alarm</text>
+      <text class="s" x="210" y="301" text-anchor="middle">(POC: "on-device AI · rhythm v1.3" badge)</text>
+
+      <rect class="box" x="430" y="232" width="380" height="96" rx="10"/>
+      <text class="t" x="620" y="262" text-anchor="middle">Human in the loop</text>
+      <text class="s" x="620" y="284" text-anchor="middle">AI raises or ranks events; clinicians decide</text>
+      <text class="s" x="620" y="301" text-anchor="middle">dispositions measure false-alarm rate per model</text>
+
+      <rect class="box" x="840" y="232" width="380" height="96" rx="10"/>
+      <text class="t" x="1030" y="262" text-anchor="middle">Change control</text>
+      <text class="s" x="1030" y="284" text-anchor="middle">IEC 62304 change process · FDA PCCP for AI updates</text>
+      <text class="s" x="1030" y="301" text-anchor="middle">rollback by model version</text>
+    </svg>
+    <figcaption>Edge AI gives real-time detection even without connectivity; cloud AI learns from de-identified, consented data. Clinician review
+      dispositions (actionable, transient, artifact) are the labels that let the team measure and reduce false alarms per model version.</figcaption>
+  </figure>
+
+  <h1 style="margin-top:48px">Regulatory &amp; quality map</h1>
+  <p class="lede">The standards ITR already works with, and what each means for CardioWatch's software. Regulatory classification is decided with regulatory affairs; the table lists the questions to settle.</p>
+  <table>
+    <thead><tr><th style="width:210px">Standard / rule</th><th>What it means for CardioWatch</th><th style="width:260px">POC today</th></tr></thead>
+    <tbody>
+      <tr><td><b>IEC 62304</b> software life cycle</td><td>Safety class (A/B/C) of alarm functions; software development plan, requirements traceability, SOUP list, verification, problem resolution, design history file</td><td>Automated tests + CI; traceability and SOUP list drafted in the delivery pack</td></tr>
+      <tr><td><b>ISO 14971</b> risk management</td><td>Hazards such as missed, delayed or misattributed alarms; controls verified by tests</td><td>Risk register in the delivery pack</td></tr>
+      <tr><td><b>ISO 13485</b> quality system</td><td>Design controls, document control, CAPA; development runs inside ITR's QMS</td><td>Git history, CI evidence</td></tr>
+      <tr><td><b>IEC 62366-1</b> usability</td><td>Alarm-fatigue and use-error analysis; formative and summative usability tests with nurses</td><td>Severity = icon + label + colour; demo-only indicator labelled</td></tr>
+      <tr><td><b>IEC 60601-1-8</b> alarm systems</td><td>Device-side alarm priority conventions; keep CardioWatch severities consistent with the source device</td><td>Queue ordered by source severity</td></tr>
+      <tr><td><b>IEC 81001-5-1</b> / FDA cybersecurity</td><td>Secure development life cycle, threat model, SBOM, vulnerability handling</td><td>RBAC, audit hash chain, input validation; SBOM not yet generated</td></tr>
+      <tr><td><b>FDA</b> device software</td><td>Display/storage only can fall under MDDS; active patient monitoring and alarm notification are device functions; PCCP for AI model updates; 510(k) for the devices</td><td>Not assessed: needs regulatory decision</td></tr>
+      <tr><td><b>Health Canada</b></td><td>Medical device licence class for monitoring software (relevant to ITR's Canadian telemedicine clients)</td><td>Not assessed</td></tr>
+      <tr><td><b>Privacy</b>: HIPAA (US), PIPEDA + provincial laws such as Ontario PHIPA (Canada), GDPR (EU)</td><td>Lawful basis and consent, access control, encryption, audit, breach response, data residency per contract</td><td>Synthetic data only; controls listed in SECURITY.md</td></tr>
+    </tbody>
+  </table>
 
   <h1 style="margin-top:48px">HIPAA: the essentials</h1>
   <table>

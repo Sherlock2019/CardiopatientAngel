@@ -2,11 +2,12 @@ import { Fragment, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { ArrowLeft, Check, ClipboardCheck } from "lucide-react";
+import { ArrowLeft, Check, ClipboardCheck, Video } from "lucide-react";
+import { Battery, HealthBadge, type DeviceRow } from "./Devices";
 import { api, useApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useMeta } from "../lib/meta";
-import { fmtDate, fmtNum, fmtTime } from "../lib/format";
+import { ago, fmtDate, fmtNum, fmtTime, MEAS_LABEL } from "../lib/format";
 import type { Alarm, Attention } from "../lib/types";
 import { AttentionFactors, useAcknowledge } from "../components/AlarmTable";
 import { AXIS, Legend, SERIES, TooltipBox } from "../components/charts";
@@ -22,6 +23,7 @@ interface Detail {
   reviews: { review_id: number; alarm_id: number; reviewer: string; review_timestamp: string; disposition: string; notes: string | null }[];
   alarm_totals: { total: number; resolved: number; critical: number };
   attention: Attention | null;
+  device: DeviceRow | null;
 }
 interface Meas { measurement_type: string; numeric_value: number | null; observed_at: string; quality_status: string; latency_seconds: number }
 
@@ -29,6 +31,7 @@ const VITALS = [
   { title: "Heart rate", unit: "bpm", series: [{ key: "heart_rate", label: "HR", color: SERIES[0] }], refs: [50, 110], domain: [30, 180] },
   { title: "Blood pressure", unit: "mmHg", series: [{ key: "systolic_bp", label: "Systolic", color: SERIES[0] }, { key: "diastolic_bp", label: "Diastolic", color: SERIES[1] }], refs: [90, 175], domain: [40, 220] },
   { title: "Oxygen saturation", unit: "%", series: [{ key: "spo2", label: "SpO₂", color: SERIES[0] }], refs: [92], domain: [75, 100] },
+  { title: "Sleep (nightly, from ring)", unit: "h", series: [{ key: "sleep_hours", label: "Sleep", color: SERIES[0] }], refs: [], domain: [0, 12] },
 ];
 
 function VitalChart({ v, rows }: { v: (typeof VITALS)[number]; rows: Record<string, number | null>[] }) {
@@ -48,7 +51,7 @@ function VitalChart({ v, rows }: { v: (typeof VITALS)[number]; rows: Record<stri
             <Tooltip content={({ active, payload, label }) => active && payload?.length ? (
               <TooltipBox title={fmtTime(new Date(label as number).toISOString())} rows={payload.map((p) => ({ label: String(p.name), value: `${fmtNum(p.value as number)} ${v.unit}`, color: p.color }))} />
             ) : null} />
-            {v.series.map((s) => <Line key={s.key} dataKey={s.key} name={s.label} stroke={s.color} strokeWidth={2} dot={false} connectNulls={false} isAnimationActive={false} />)}
+            {v.series.map((s) => <Line key={s.key} dataKey={s.key} name={s.label} stroke={s.color} strokeWidth={2} dot={s.key === "sleep_hours" ? { r: 3 } : false} connectNulls={s.key === "sleep_hours"} isAnimationActive={false} />)}
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -124,6 +127,15 @@ export default function PatientDetail() {
   const [hours, setHours] = useState("72");
   const [resolving, setResolving] = useState<number | null>(null);
   const ack = useAcknowledge();
+  const qc = useQueryClient();
+  const [consulted, setConsulted] = useState<Set<number>>(new Set());
+  const consult = useMutation({
+    mutationFn: (id: number) => api(`/api/alarms/${id}/consult-request`, { method: "POST", body: JSON.stringify({ urgency: "urgent" }) }),
+    onSuccess: (_d, id) => {
+      setConsulted((s) => new Set(s).add(id));
+      qc.invalidateQueries({ queryKey: ["integration-events"] });
+    },
+  });
   const p = useApi<Detail>(["patient", id], `/api/patients/${id}`);
   const meas = useApi<{ items: Meas[]; quality_counts: Record<string, number> }>(["patient-meas", id], `/api/patients/${id}/measurements`, { hours });
   const alarms = useApi<{ items: Alarm[] }>(["patient-alarms", id], `/api/patients/${id}/alarms`, { limit: 300 });
@@ -170,6 +182,16 @@ export default function PatientDetail() {
             <div><dt className="text-muted">Reviews</dt><dd className="tabular text-lg font-semibold">{d.reviews.length}</dd></div>
           </dl>
         </div>
+        {d.device && (
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 rounded-lg border border-black/10 bg-white px-3 py-2 text-xs">
+            <span className="font-semibold">{d.device.device_type}</span>
+            <span className="text-ink-2">{d.device.model} · {d.device.connectivity} · firmware v{d.device.firmware_version}</span>
+            <HealthBadge h={d.device.health} />
+            <Battery pct={d.device.battery_pct} />
+            <span className="text-ink-2">last sync {d.device.last_sync_at ? ago(d.device.last_sync_at) : "—"}</span>
+            <span className="text-muted">measures: {d.device.signals.map((s) => MEAS_LABEL[s] ?? s).join(", ")}</span>
+          </div>
+        )}
         {d.attention && d.attention.score > 0 && (
           <div className="mt-3 rounded-lg border border-black/10 bg-white p-3"><AttentionFactors a={d.attention} /></div>
         )}
@@ -183,7 +205,9 @@ export default function PatientDetail() {
             right={<Segmented label="Trend window" value={hours} onChange={setHours} options={[{ value: "24", label: "24 h" }, { value: "72", label: "72 h" }, { value: "168", label: "7 d" }, { value: "720", label: "Stay" }]} />}
           />
           <div className="space-y-3 p-4">
-            {meas.isLoading ? <Loading /> : rows.length === 0 ? <Empty>No readings in this window.</Empty> : VITALS.map((v) => <VitalChart key={v.title} v={v} rows={rows} />)}
+            {meas.isLoading ? <Loading /> : rows.length === 0 ? <Empty>No readings in this window.</Empty> : VITALS
+              .filter((v) => v.series.some((s) => rows.some((r) => r[s.key] !== undefined)))
+              .map((v) => <VitalChart key={v.title} v={v} rows={rows} />)}
           </div>
         </Card>
         <Card>
@@ -221,7 +245,7 @@ export default function PatientDetail() {
                   <Fragment key={a.alarm_id}>
                     <tr className="border-b border-black/5">
                       <td className="tabular px-3 py-1.5">{fmtTime(a.triggered_at)}</td>
-                      <td className="px-3 py-1.5 font-medium">{a.alarm_type}</td>
+                      <td className="px-3 py-1.5 font-medium">{a.alarm_type}{a.source?.startsWith("edge-ai") && <div className="text-[10px] font-normal text-muted">on-device AI · {a.source.replace("edge-ai ", "")}</div>}</td>
                       <td className="px-3 py-1.5"><SeverityBadge severity={a.severity} /></td>
                       <td className="tabular px-3 py-1.5">{fmtNum(a.trigger_value, 0)} {a.trigger_unit}</td>
                       <td className="tabular px-3 py-1.5">{a.acknowledged_at ? `${fmtTime(a.acknowledged_at)} · ${a.acknowledged_by}` : "—"}</td>
@@ -234,7 +258,14 @@ export default function PatientDetail() {
                             <Button size="sm" variant="primary" onClick={() => ack.mutate(a.alarm_id)} aria-label={`Acknowledge alarm ${a.alarm_id}`}><Check size={12} /> Acknowledge</Button>
                           )}
                           {!a.resolved_at && can("review_alarm") && (
-                            <Button size="sm" onClick={() => setResolving(a.alarm_id)}>Review…</Button>
+                            <>
+                              <Button size="sm" onClick={() => setResolving(a.alarm_id)}>Review…</Button>
+                              <Button size="sm" variant="ghost" disabled={consult.isPending || consulted.has(a.alarm_id)}
+                                onClick={() => consult.mutate(a.alarm_id)} aria-label={`Request virtual consult for alarm ${a.alarm_id}`}
+                                title="Ask the connected virtual-care platform to open a video consult">
+                                <Video size={12} /> {consulted.has(a.alarm_id) ? "Consult requested" : "Virtual consult"}
+                              </Button>
+                            </>
                           )}
                         </div>
                       </td>

@@ -5,7 +5,7 @@ import { useMeta, type AnalyticsFilters } from "../lib/meta";
 import { fmtNum } from "../lib/format";
 import type { RateRow } from "../lib/types";
 import { FilterBar, toParams } from "../components/FilterBar";
-import { AXIS, SERIES, SeqLegend, TooltipBox, inkOn, seqColor } from "../components/charts";
+import { AXIS, Legend, SERIES, SeqLegend, TooltipBox, inkOn, seqColor } from "../components/charts";
 import { ChartCard, DataTable, Note, QueryBoundary, Segmented, Badge } from "../components/ui";
 
 type Resp<T> = { rows: T[]; note: string; overlap_note?: string; causal_note?: string };
@@ -165,6 +165,7 @@ export default function RiskAnalytics() {
   const tx = useApi<Resp<RateRow>>(["by-tx"], "/api/analytics/by-treatment", p);
   const ap = useApi<{ cells: (RateRow & { age_group: string; key: string })[]; overlap_note: string }>(["age-path"], "/api/analytics/age-pathology", p);
   const med = useApi<Resp<RateRow> & { matrix: { cells: { key: string; alarm_type: string; alarms: number; rate_per_100_patient_days: number; share_pct: number; patients: number }[]; alarms_with_any_class_active: number; alarms_with_multiple_classes_active: number; total_alarms: number } }>(["by-med"], "/api/analytics/by-medication", p);
+  const dev = useApi<{ rows: (RateRow & { device_type: string; technical_alarms: number; technical_pct: number | null; technical_rate_per_100_patient_days: number | null })[] }>(["by-device"], "/api/analytics/by-device", p);
   const tr = useApi<{ rows: Record<string, number | string | null>[] }>(["trends"], "/api/analytics/trends", { ...p, granularity: gran });
 
   const top = useMemo(() => {
@@ -222,6 +223,43 @@ export default function RiskAnalytics() {
           footer={<Note tone="warn">Associations between treatments and alarms do not establish treatment effects or causation. Patients on a treatment differ in many ways from those who are not.</Note>} />
         <Heatmap p={p} />
       </div>
+
+      <ChartCard
+        title="Alarm burden by device type — clinical vs. technical"
+        subtitle="Alarms per 100 monitored patient-days. Technical = signal loss and low battery: device and connectivity work, not patient deterioration."
+        controls={<Legend items={[{ label: "Clinical", color: SERIES[0] }, { label: "Technical", color: SERIES[1] }]} />}
+        chart={
+          <QueryBoundary q={dev}>
+            {(d) => {
+              const rows = d.rows.map((r) => ({ ...r, clinical: (r.rate_per_100_patient_days ?? 0) - (r.technical_rate_per_100_patient_days ?? 0), technical: r.technical_rate_per_100_patient_days ?? 0 }));
+              return (
+                <div className="h-60">
+                  <ResponsiveContainer>
+                    <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 16 }} barCategoryGap={8}>
+                      <CartesianGrid horizontal={false} />
+                      <XAxis type="number" {...AXIS} tickLine={false} />
+                      <YAxis type="category" dataKey="device_type" width={150} {...AXIS} tickLine={false} axisLine={false} />
+                      <Tooltip cursor={{ fill: "rgba(42,120,214,0.06)" }} content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null;
+                        const r = payload[0].payload;
+                        return <TooltipBox title={r.device_type} rows={[
+                          { label: "Clinical /100 pt-days", value: fmtNum(r.clinical), color: SERIES[0] },
+                          { label: "Technical /100 pt-days", value: fmtNum(r.technical), color: SERIES[1] },
+                          { label: "Technical share", value: `${fmtNum(r.technical_pct)}%` },
+                          { label: "Patients", value: r.patients },
+                        ]} />;
+                      }} />
+                      <Bar dataKey="clinical" stackId="a" fill={SERIES[0]} maxBarSize={22} stroke="#fcfcfb" strokeWidth={2} />
+                      <Bar dataKey="technical" stackId="a" fill={SERIES[1]} radius={[0, 4, 4, 0]} maxBarSize={22} stroke="#fcfcfb" strokeWidth={2} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              );
+            }}
+          </QueryBoundary>
+        }
+        table={dev.data && <DataTable rows={dev.data.rows} columns={[{ key: "device_type", label: "Device type" }, { key: "patients", label: "Patients", align: "right" }, { key: "alarms", label: "Alarms", align: "right" }, { key: "rate_per_100_patient_days", label: "/100 pt-days", align: "right", fmt: (v) => fmtNum(v) }, { key: "technical_alarms", label: "Technical", align: "right" }, { key: "technical_pct", label: "Technical %", align: "right", fmt: (v) => fmtNum(v) }]} />}
+      />
 
       {meta.data && ap.data && (
         <Matrix

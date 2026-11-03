@@ -14,6 +14,10 @@ class AckIn(BaseModel):
     note: str | None = Field(default=None, max_length=500)
 
 
+class ConsultIn(BaseModel):
+    urgency: Literal["routine", "urgent"] = "routine"
+
+
 class ResolveIn(BaseModel):
     disposition: str
     notes: str | None = Field(default=None, max_length=1000)
@@ -37,7 +41,7 @@ class SimulatorConfig(BaseModel):
 
 class MeasurementIn(BaseModel):
     patient_id: str = Field(pattern=r"^P\d{5}$")
-    measurement_type: Literal["heart_rate", "systolic_bp", "diastolic_bp", "spo2"]
+    measurement_type: Literal["heart_rate", "systolic_bp", "diastolic_bp", "spo2", "sleep_hours"]
     value: float | None = Field(default=None, ge=0, le=400)
     observed_at: datetime
     received_at: datetime | None = None

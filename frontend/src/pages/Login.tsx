@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Activity, Shield, Stethoscope, HeartPulse } from "lucide-react";
-import { useAuth } from "../lib/auth";
+import { IDLE_MINUTES, useAuth } from "../lib/auth";
 import { useApi } from "../lib/api";
 import { Card, ErrorState } from "../components/ui";
 
@@ -15,6 +15,11 @@ export default function Login() {
   const { login } = useAuth();
   const users = useApi<{ username: string; display_name: string; role: keyof typeof ICON; unit: string | null }[]>(["demo-users"], "/api/auth/users");
   const [err, setErr] = useState<unknown>(null);
+  const [idle] = useState(() => {
+    const v = sessionStorage.getItem("cw_idle_logout") === "1";
+    sessionStorage.removeItem("cw_idle_logout");
+    return v;
+  });
 
   return (
     <div className="flex min-h-full items-center justify-center bg-plane p-6">
@@ -26,6 +31,11 @@ export default function Login() {
             <p className="text-sm text-ink-2">From Cardiac Monitoring Data to Better Clinical Awareness and Care-Team Coordination.</p>
           </div>
         </div>
+        {idle && (
+          <p role="status" className="mb-3 rounded-md border border-warn/60 bg-warn/10 px-3 py-2 text-xs">
+            You were signed out after {IDLE_MINUTES} minutes of inactivity.
+          </p>
+        )}
         <Card className="p-5">
           <h2 className="text-sm font-semibold">Choose a demo account</h2>
           <p className="mb-4 text-xs text-muted">Demo identity switcher — no passwords. Roles are enforced by the server on every request.</p>

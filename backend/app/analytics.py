@@ -224,6 +224,22 @@ def by_age(F: Frames, w: Window, units=None, alarm_types=None, severities=None) 
     return records(_flag_small(t))
 
 
+def by_device(F: Frames, w: Window, units=None) -> list[dict]:
+    """Alarm burden per device type, split into clinical vs. technical (signal loss, low battery) alarms."""
+    pats = _patients(F, units)
+    iv = _monitor_iv(pats, w)
+    a = _alarms(F, w, units)
+    t = _rate_table(iv, a.merge(pats[["patient_id", "device_type"]], on="patient_id"), ["device_type"])
+    tech = a[a["alarm_type"].isin(d.TECHNICAL_ALARMS)].merge(pats[["patient_id", "device_type"]], on="patient_id") \
+        .groupby("device_type").size()
+    t["technical_alarms"] = t["device_type"].map(tech).fillna(0).astype(int)
+    t["technical_pct"] = np.where(t["alarms"] > 0, t["technical_alarms"] / t["alarms"].clip(lower=1) * 100, np.nan)
+    t["technical_rate_per_100_patient_days"] = t["technical_alarms"] / t["exposure_days"] * 100
+    order = {k: i for i, k in enumerate(d.DEVICE_TYPES)}
+    t = t.sort_values("device_type", key=lambda s: s.map(order))
+    return records(_flag_small(t))
+
+
 def by_dimension(F: Frames, w: Window, dimension: str, units=None, alarm_types=None, severities=None) -> list[dict]:
     pats = _patients(F, units)
     iv = _merge_overlaps(_clip(F.intervals[dimension], pats, w), ["patient_id", "key"])

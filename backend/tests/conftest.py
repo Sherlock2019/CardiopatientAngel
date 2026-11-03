@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 from app import analytics, settings_store  # noqa: E402
 from app.db import Base, SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models import Alarm, CardiacMeasurement, Diagnosis, Medication, Patient, Treatment  # noqa: E402
+from app.models import Alarm, CardiacMeasurement, Device, Diagnosis, Medication, Patient, Treatment  # noqa: E402
 
 NOW = datetime.now(timezone.utc).replace(microsecond=0)
 
@@ -42,6 +42,14 @@ def build_fixture_data(db):
                 assigned_care_team="Team Blue", device_id="TEL-0002", device_type="Telemetry pack")
     db.add_all([A, B])
     db.flush()
+    db.add_all([
+        Device(device_id="BED-0001", device_type="Bedside monitor", model="BM-500", firmware_version="4.2.1",
+               connectivity="Wired / Wi-Fi", battery_pct=None, last_sync_at=NOW - timedelta(days=5),
+               status="returned", patient_id="P00001"),
+        Device(device_id="TEL-0002", device_type="Telemetry pack", model="TX-12", firmware_version="2.9.0",
+               connectivity="Wi-Fi", battery_pct=12, last_sync_at=NOW - timedelta(minutes=2),
+               status="in_use", patient_id="P00002"),
+    ])
     db.add_all([
         Diagnosis(patient_id="P00001", diagnosis_code="I50.9", pathology_name="Heart failure",
                   diagnosis_date=NOW - timedelta(days=7), active_status=True),

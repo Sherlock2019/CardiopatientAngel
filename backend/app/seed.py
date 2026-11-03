@@ -35,7 +35,10 @@ INJECTED_PATTERNS = [
     "Acknowledgment is slower 06:00-09:00 and at night; faster for critical alarms.",
     "While antiarrhythmics are active, HR-low and irregular-rhythm alarms are more likely.",
     "While diuretics are active, BP-low alarms are more likely.",
-    "Wearable patches produce more signal-loss (technical) alarms.",
+    "Wearables (ECG patch, cuffless BP monitor, biosensor ring) produce more signal-loss and low-battery alarms.",
+    "Devices only raise alarms they can measure (e.g. rings never alarm on BP; only cuffless BP monitors detect falls).",
+    "Fall-detection alarms become more likely with age.",
+    "Remote Monitoring (retirement homes / home care) has a lower alarm hazard but slower acknowledgment.",
     "About 30% of alarms are followed by 1-3 repeats of the same type within 5-90 minutes.",
 ]
 
@@ -47,9 +50,10 @@ OUTCOME_PATTERNS = [
     "Cardiac rehabilitation x0.45 — confounded by design: only patients with stays > 4 days could start rehab.",
     "Anticoagulants in atrial fibrillation x0.7; beta blockers in heart failure x0.75.",
 ]
+EDGE_AI_SOURCE = "edge-ai rhythm v1.3"
 MORT_AGE = [0.3, 0.5, 0.8, 1.2, 2.2, 3.5]
 UNIT_MORT = {"Coronary Care Unit": 1.8, "Post-Op Cardiac": 1.2, "Cardiac Step-Down": 1.0,
-             "Telemetry Ward A": 0.7, "Telemetry Ward B": 0.7}
+             "Telemetry Ward A": 0.7, "Telemetry Ward B": 0.7, "Remote Monitoring": 0.4}
 PATH_MORT = {"Heart failure": 2.0, "Tachyarrhythmia": 1.3, "Atrial fibrillation": 1.2}
 
 FIRST = ["Avery", "Jordan", "Morgan", "Riley", "Casey", "Quinn", "Rowan", "Sasha", "Elliot", "Noa",
@@ -64,9 +68,15 @@ LAST = ["Lambert", "Okonkwo", "Bergeron", "Castillo", "Nguyen", "Fischer", "Hadd
 AGE_WEIGHTS = [0.10, 0.15, 0.25, 0.27, 0.18, 0.05]
 AGE_RANGES = [(28, 49), (50, 59), (60, 69), (70, 79), (80, 89), (90, 98)]
 AGE_HAZARD = [0.7, 0.85, 1.0, 1.2, 1.55, 1.8]
-UNIT_WEIGHTS = [0.15, 0.2, 0.25, 0.25, 0.15]
+UNIT_WEIGHTS = [0.13, 0.17, 0.2, 0.2, 0.12, 0.18]
 UNIT_HAZARD = {"Coronary Care Unit": 1.4, "Post-Op Cardiac": 1.3, "Cardiac Step-Down": 1.0,
-               "Telemetry Ward A": 0.85, "Telemetry Ward B": 0.85}
+               "Telemetry Ward A": 0.85, "Telemetry Ward B": 0.85, "Remote Monitoring": 0.55}
+# device mix per unit (order of d.DEVICE_TYPES: bedside, telemetry, ECG patch, cuffless BP, ring)
+DEVICE_MIX = {
+    "Coronary Care Unit": [0.9, 0.05, 0.05, 0, 0], "Post-Op Cardiac": [0.85, 0.1, 0.05, 0, 0],
+    "Cardiac Step-Down": [0.2, 0.6, 0.2, 0, 0], "Telemetry Ward A": [0.05, 0.75, 0.2, 0, 0],
+    "Telemetry Ward B": [0.05, 0.75, 0.2, 0, 0], "Remote Monitoring": [0, 0, 0.35, 0.35, 0.3],
+}
 PATH_HAZARD = {"Heart failure": 0.35, "Tachyarrhythmia": 0.5, "Atrial fibrillation": 0.25,
                "Bradycardia": 0.2, "Coronary artery disease": 0.0, "Hypertension": 0.0}
 
@@ -137,22 +147,22 @@ class Generator:
             g = r.choices(range(6), AGE_WEIGHTS)[0]
             age = r.randint(*AGE_RANGES[g])
             unit = r.choices(d.CARE_UNITS, UNIT_WEIGHTS)[0]
-            if r.random() < 0.17:
-                adm = self.anchor - timedelta(days=r.uniform(0.3, 12))
+            remote = unit == d.REMOTE_UNIT
+            if r.random() < (0.3 if remote else 0.17):
+                adm = self.anchor - timedelta(days=r.uniform(0.3, 30 if remote else 12))
                 end = None
             else:
                 los = min(max(self.rng.lognormal(math.log(4.5), 0.6), 1.0), 25.0)
                 if unit == "Coronary Care Unit":
                     los *= 0.7
+                if remote:  # remote-monitoring enrolment lasts weeks
+                    los = r.uniform(10, 45)
                 adm = self.start + timedelta(days=r.uniform(0, 90 - los - 0.1))
                 end = adm + timedelta(days=los)
             adm = adm.replace(microsecond=0)
             end = end.replace(microsecond=0) if end else None
             dob = adm.date().replace(day=1) - timedelta(days=365.25 * age + r.randint(0, 330))
-            if unit in ("Coronary Care Unit", "Post-Op Cardiac"):
-                dtype = r.choices(list(d.DEVICE_TYPES), [0.85, 0.1, 0.05])[0]
-            else:
-                dtype = r.choices(list(d.DEVICE_TYPES), [0.1, 0.65, 0.25])[0]
+            dtype = r.choices(list(d.DEVICE_TYPES), DEVICE_MIX[unit])[0]
             p = dict(
                 patient_id=pid,
                 synthetic_name=f"{r.choice(FIRST)} {r.choice(LAST)}",
@@ -280,7 +290,12 @@ class Generator:
                 ts = ts.to_pydatetime().replace(microsecond=0)
                 hour_local = ts.astimezone(self.tz).hour
                 diurnal = -4 if hour_local < 6 else 0
-                for mtype in ("heart_rate", "systolic_bp", "diastolic_bp", "spo2"):
+                signals = [s for s in d.DEVICE_INFO[p["device_type"]]["signals"] if s != "sleep_hours"]
+                if "sleep_hours" in d.DEVICE_INFO[p["device_type"]]["signals"] and 5 <= hour_local < 9:
+                    # one nightly sleep summary from the ring, stamped at the morning sync
+                    sleep = min(max(rng.normal(6.4 - 0.25 * p["_age_idx"], 1.1), 2.0), 10.0)
+                    self._add_measurement(p, "sleep_hours", round(sleep, 1), ts, ts + timedelta(minutes=r.uniform(1, 30)), "valid")
+                for mtype in signals:
                     base = p["_base"][mtype]
                     val = rng.normal(base + (diurnal if mtype == "heart_rate" else 0), sd[mtype])
                     if mtype == "spo2":
@@ -309,14 +324,21 @@ class Generator:
             if st <= t and (en is None or t < en):
                 for k, v in MED_TYPE_W.get(cls, {}).items():
                     w[k] += v
-        if p["device_type"] == "Wearable patch":
+        info = d.DEVICE_INFO[p["device_type"]]
+        if p["device_type"] in d.WEARABLES:
             w["Signal loss"] += 0.15
-        return w
+        w["Fall detected"] = 0.04 * (1 + 0.5 * p["_age_idx"])
+        w["Low battery"] = 0.05
+        return {k: v for k, v in w.items() if k in info["alarms"]}
 
     def _severity(self, p, alarm_type) -> str:
         r = self.r
         if alarm_type == "Signal loss":
             return "advisory" if r.random() < 0.9 else "warning"
+        if alarm_type == "Low battery":
+            return "advisory"
+        if alarm_type == "Fall detected":
+            return "critical" if r.random() < 0.4 else "warning"
         if alarm_type == "Irregular rhythm":
             return "warning" if r.random() < 0.7 else "advisory"
         u = r.random()
@@ -328,7 +350,7 @@ class Generator:
         return "warning" if u < crit + 0.6 else "advisory"
 
     def _trigger_value(self, alarm_type, severity):
-        if alarm_type == "Signal loss":
+        if d.ALARM_MEASUREMENT[alarm_type] is None:
             return None
         if alarm_type == "Irregular rhythm":
             return round(self.r.uniform(95, 150), 0)
@@ -377,13 +399,16 @@ class Generator:
         r, rng = self.r, self.rng
         value = self._trigger_value(atype, sev)
         mtype = d.ALARM_MEASUREMENT[atype] or "heart_rate"
-        mid = self._add_measurement(p, mtype, value, t, t + timedelta(seconds=r.randint(1, 5)),
-                                    "missing" if value is None else "valid")
+        mid = None  # falls / low battery are device events, not vital-sign readings
+        if d.ALARM_MEASUREMENT[atype] or atype == "Signal loss":
+            mid = self._add_measurement(p, mtype, value, t, t + timedelta(seconds=r.randint(1, 5)),
+                                        "missing" if value is None else "valid")
         local_h = t.astimezone(self.tz).hour
         f = 1.0
         f *= 1.6 if 6 <= local_h < 9 else 1.3 if (local_h >= 23 or local_h < 6) else 1.0
         f *= {"critical": 0.5, "warning": 1.0, "advisory": 1.5}[sev]
         f *= 1.2 if p["care_unit"].startswith("Telemetry") else 1.0
+        f *= 2.0 if p["care_unit"] == d.REMOTE_UNIT else 1.0
         ack_delay = min(rng.lognormal(math.log(2.5), 0.8) * f, 60)
         ack = t + timedelta(minutes=ack_delay, seconds=r.randint(0, 59))
         res = ack + timedelta(minutes=min(rng.lognormal(math.log(12), 0.7), 240))
@@ -419,7 +444,10 @@ class Generator:
             trigger_unit=d.MEASUREMENT_UNITS[mtype] if value is not None else None,
             triggered_at=t, received_at=t + timedelta(seconds=r.randint(1, 5)),
             acknowledged_at=ack, acknowledged_by=nurse if ack else None, resolved_at=res, assigned_nurse=nurse,
-            clinical_review_status=status, source="seed-history", simulated_flag=True))
+            clinical_review_status=status,
+            # rhythm events from ECG patches come from the on-device (edge AI) classifier; provenance keeps its version
+            source=EDGE_AI_SOURCE if (atype == "Irregular rhythm" and p["device_type"] == "ECG patch") else "seed-history",
+            simulated_flag=True))
 
     # ---------------------------------------------------------------- outcomes
     def build_outcomes(self):
@@ -447,16 +475,38 @@ class Generator:
             risk *= min(p["_frailty"], 2.5) ** 0.5
             p["discharge_outcome"] = "Deceased" if self.r.random() < min(risk, 0.6) else "Discharged alive"
 
+    # ---------------------------------------------------------------- device fleet
+    def build_devices(self):
+        r = self.r
+        self.devices = []
+        for p in self.patients:
+            info = d.DEVICE_INFO[p["device_type"]]
+            active = p["monitoring_end"] is None
+            if active:
+                stale = d.demo_offline(p["device_id"])  # some devices have not synced recently (offline / out of range)
+                last = self.anchor - timedelta(minutes=r.uniform(info["offline_after_min"] * 1.5, 600) if stale else r.uniform(0.2, 8))
+            else:
+                last = p["monitoring_end"]
+            battery = None
+            if info["battery"]:
+                battery = int(r.choice([r.randint(5, 19)] + [r.randint(20, 100)] * 6))
+            self.devices.append(dict(
+                device_id=p["device_id"], device_type=p["device_type"], model=info["model"],
+                firmware_version=r.choice(info["firmware"]), connectivity=info["connectivity"], battery_pct=battery,
+                last_sync_at=last.replace(microsecond=0), status="in_use" if active else "returned",
+                patient_id=p["patient_id"]))
+
     def run(self):
         self.build_patients()
         self.build_alarms()  # alarm measurements first so they win any idempotency collision
         self.build_measurements()
         self.build_outcomes()
+        self.build_devices()
         return self
 
 
-TABLES = ["audit_log", "clinical_reviews", "alarms", "cardiac_measurements", "treatments", "medications",
-          "diagnoses", "patients"]
+TABLES = ["integration_events", "audit_log", "devices", "clinical_reviews", "alarms", "cardiac_measurements",
+          "treatments", "medications", "diagnoses", "patients"]
 
 
 def _copy(cur, table: str, rows: list[dict], cols: list[str]):
@@ -473,6 +523,8 @@ def write(gen: Generator):
         pcols = ["patient_id", "synthetic_name", "date_of_birth", "sex", "admission_date", "monitoring_end",
                  "care_unit", "monitoring_status", "discharge_outcome", "assigned_care_team", "device_id", "device_type"]
         _copy(cur, "patients", gen.patients, pcols)
+        _copy(cur, "devices", gen.devices, ["device_id", "device_type", "model", "firmware_version", "connectivity",
+                                            "battery_pct", "last_sync_at", "status", "patient_id"])
         _copy(cur, "diagnoses", gen.diagnoses, ["patient_id", "diagnosis_code", "pathology_name", "diagnosis_date",
                                                 "resolved_date", "active_status"])
         _copy(cur, "medications", gen.medications, ["patient_id", "medication_name", "medication_class",

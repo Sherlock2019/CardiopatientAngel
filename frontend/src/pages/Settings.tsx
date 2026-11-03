@@ -13,9 +13,16 @@ interface S {
 
 function AuditLog() {
   const q = useApi<{ audit_id: number; occurred_at: string; username: string; role: string; action: string; resource_type: string; resource_id: string; details: string | null }[]>(["audit"], "/api/audit", { limit: 100 });
+  const verify = useApi<{ valid: boolean; entries_checked: number; first_broken_audit_id: number | null }>(["audit", "verify"], "/api/audit/verify");
   return (
     <Card>
-      <CardHeader title="Audit log" subtitle="Patient-record access, alarm acknowledgment/review, simulator and settings changes" />
+      <CardHeader
+        title="Audit log"
+        subtitle="Patient-record access, alarm acknowledgment/review, consult requests, simulator and settings changes · hash-chained (each entry seals the previous one)"
+        right={verify.data && (verify.data.valid
+          ? <span className="inline-flex items-center gap-1 rounded-full border border-good/40 bg-good/5 px-2 py-0.5 text-[11px] font-medium text-good-text">✓ Chain intact · {verify.data.entries_checked} entries</span>
+          : <span role="alert" className="inline-flex items-center gap-1 rounded-full border border-crit/40 bg-crit/5 px-2 py-0.5 text-[11px] font-medium text-crit">✗ Tampering detected at entry #{verify.data.first_broken_audit_id}</span>)}
+      />
       <QueryBoundary q={q} empty={(d) => d.length === 0}>
         {(d) => <div className="max-h-96 overflow-auto"><DataTable rows={d} columns={[
           { key: "occurred_at", label: "Time", fmt: (v) => fmtTime(v) }, { key: "username", label: "User" }, { key: "role", label: "Role" },

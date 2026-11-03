@@ -138,3 +138,32 @@ class AuditLog(Base):
     resource_type: Mapped[str] = mapped_column(String(30))
     resource_id: Mapped[str] = mapped_column(String(40))
     details: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Tamper evidence: sha256(prev_hash + canonical row). Any edit or deletion breaks the chain.
+    prev_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    row_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+
+class Device(Base):
+    """Monitoring device fleet (one primary device per patient in the demo)."""
+    __tablename__ = "devices"
+    device_id: Mapped[str] = mapped_column(String(20), primary_key=True)
+    device_type: Mapped[str] = mapped_column(String(30), index=True)
+    model: Mapped[str] = mapped_column(String(30))
+    firmware_version: Mapped[str] = mapped_column(String(20))
+    connectivity: Mapped[str] = mapped_column(String(30))
+    battery_pct: Mapped[int | None] = mapped_column(Integer, nullable=True)  # NULL = mains powered
+    last_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(20))  # in_use | returned
+    patient_id: Mapped[str | None] = mapped_column(ForeignKey("patients.patient_id"), nullable=True, index=True)
+
+
+class IntegrationEvent(Base):
+    """Transactional outbox: events for external systems (telemedicine platform, EHR), delivered by a relay."""
+    __tablename__ = "integration_events"
+    event_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    event_type: Mapped[str] = mapped_column(String(40), index=True)  # alarm.created | alarm.acknowledged | consult.requested
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    target: Mapped[str] = mapped_column(String(40))
+    payload: Mapped[str] = mapped_column(Text)  # JSON, identifiers only (no free-text clinical notes)
+    status: Mapped[str] = mapped_column(String(12))  # pending | delivered
+    delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

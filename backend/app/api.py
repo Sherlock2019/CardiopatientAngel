@@ -1,5 +1,6 @@
 """Core REST API: auth, dashboard, patients, alarms, ingestion, simulator, live stream, settings, audit."""
 import asyncio
+import json
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo, available_timezones
 
@@ -9,13 +10,14 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
-from . import analytics, audit, settings_store
+from . import analytics, audit, integration, settings_store
 from . import domain as d
 from .auth import DEMO_USERS, PERMISSIONS, User, current_user, issue_token, require
 from .db import get_db
 from .ingest import create_alarm, ingest_measurement
-from .models import Alarm, AuditLog, CardiacMeasurement, ClinicalReview, Diagnosis, Medication, Patient, Treatment
-from .schemas import AckIn, LoginIn, MeasurementIn, ResolveIn, SettingsPatch, SimulatorConfig
+from .models import (Alarm, AuditLog, CardiacMeasurement, ClinicalReview, Device, Diagnosis, IntegrationEvent, Medication,
+                     Patient, Treatment)
+from .schemas import AckIn, ConsultIn, LoginIn, MeasurementIn, ResolveIn, SettingsPatch, SimulatorConfig
 from .seed import INJECTED_PATTERNS, OUTCOME_PATTERNS
 from .simulator import bus, simulator
 
@@ -63,6 +65,9 @@ def meta():
         "shifts": [{"name": n, "start_hour": s, "end_hour": e} for n, s, e in d.SHIFTS],
         "injected_patterns": INJECTED_PATTERNS,
         "injected_outcome_patterns": OUTCOME_PATTERNS,
+        "device_types": list(d.DEVICE_TYPES),
+        "device_info": d.DEVICE_INFO,
+        "technical_alarms": sorted(d.TECHNICAL_ALARMS),
     }
 
 
@@ -160,6 +165,7 @@ def patient_detail(patient_id: str, db: Session = Depends(get_db), user: User = 
         "care_unit": p.care_unit, "monitoring_status": p.monitoring_status, "discharge_outcome": p.discharge_outcome,
         "assigned_care_team": p.assigned_care_team,
         "device_id": p.device_id, "device_type": p.device_type,
+        "device": _device_dict(dev, now) if (dev := db.get(Device, p.device_id)) else None,
         "diagnoses": [{"diagnosis_id": x.diagnosis_id, "diagnosis_code": x.diagnosis_code, "pathology_name": x.pathology_name,
                        "diagnosis_date": x.diagnosis_date, "resolved_date": x.resolved_date, "active_status": x.active_status} for x in dx],
         "medications": [{"medication_id": m.medication_id, "medication_name": m.medication_name, "medication_class": m.medication_class,
@@ -177,7 +183,7 @@ def patient_detail(patient_id: str, db: Session = Depends(get_db), user: User = 
 
 @router.get("/patients/{patient_id}/measurements", tags=["patients"])
 def patient_measurements(patient_id: str, hours: int = Query(72, ge=1, le=2400),
-                         measurement_type: str | None = Query(None, pattern="^(heart_rate|systolic_bp|diastolic_bp|spo2)$"),
+                         measurement_type: str | None = Query(None, pattern="^(heart_rate|systolic_bp|diastolic_bp|spo2|sleep_hours)$"),
                          db: Session = Depends(get_db), user: User = Depends(require("view_clinical"))):
     p = _get_patient(db, patient_id)
     end = p.monitoring_end or _now()
@@ -318,6 +324,8 @@ def acknowledge(alarm_id: int, body: AckIn | None = None, db: Session = Depends(
     a.clinical_review_status = "acknowledged"
     audit.record(db, user, "acknowledge_alarm", "alarm", alarm_id,
                  f"patient={a.patient_id}" + (f"; note={body.note}" if body and body.note else ""))
+    integration.emit(db, "alarm.acknowledged", {"alarm_id": alarm_id, "patient_id": a.patient_id,
+                                                "acknowledged_by": user.username})
     db.commit()
     analytics.invalidate()
     bus.publish("alarm_updated", {"alarm_id": alarm_id, "status": "acknowledged"})
@@ -345,12 +353,110 @@ def resolve(alarm_id: int, body: ResolveIn, db: Session = Depends(get_db), user:
     return _alarm_dict(a)
 
 
+@router.post("/alarms/{alarm_id}/consult-request", tags=["alarms", "integration"])
+def consult_request(alarm_id: int, body: ConsultIn, db: Session = Depends(get_db),
+                    user: User = Depends(require("review_alarm"))):
+    """Ask the connected virtual-care platform to open a video consult for this alarm (integration outbox event)."""
+    a = db.get(Alarm, alarm_id)
+    if not a:
+        raise HTTPException(404, "Alarm not found")
+    integration.emit(db, "consult.requested", {
+        "alarm_id": a.alarm_id, "patient_id": a.patient_id, "alarm_type": a.alarm_type, "severity": a.severity,
+        "urgency": body.urgency, "requested_by": user.username, "requested_role": user.role})
+    audit.record(db, user, "request_virtual_consult", "alarm", alarm_id, f"patient={a.patient_id}; urgency={body.urgency}")
+    db.commit()
+    bus.publish("alarm_updated", {"alarm_id": alarm_id, "status": "consult_requested"})
+    return {"alarm_id": alarm_id, "status": "consult_requested", "target": integration.TARGET}
+
+
+@router.get("/integration/events", tags=["integration"])
+def integration_events(limit: int = Query(50, ge=1, le=500), db: Session = Depends(get_db),
+                       user: User = Depends(require("view_analytics"))):
+    rows = db.execute(select(IntegrationEvent).order_by(IntegrationEvent.event_id.desc()).limit(limit)).scalars().all()
+    pending = db.execute(select(func.count()).where(IntegrationEvent.status == "pending")).scalar()
+    return {"pending": pending, "target": integration.TARGET, "items": [
+        {"event_id": e.event_id, "event_type": e.event_type, "occurred_at": e.occurred_at, "target": e.target,
+         "payload": json.loads(e.payload), "status": e.status, "delivered_at": e.delivered_at} for e in rows]}
+
+
+# ------------------------------------------------------------------------------------------- devices
+def _device_dict(dv: Device, now: datetime) -> dict:
+    info = d.DEVICE_INFO.get(dv.device_type, {})
+    since = None if dv.last_sync_at is None else (now - dv.last_sync_at).total_seconds() / 60
+    if dv.status != "in_use":
+        health = "returned"
+    elif since is not None and since > info.get("offline_after_min", 60):
+        health = "offline"
+    elif dv.battery_pct is not None and dv.battery_pct < 20:
+        health = "low_battery"
+    else:
+        health = "online"
+    return {"device_id": dv.device_id, "device_type": dv.device_type, "model": dv.model,
+            "firmware_version": dv.firmware_version, "connectivity": dv.connectivity, "battery_pct": dv.battery_pct,
+            "last_sync_at": dv.last_sync_at, "minutes_since_sync": None if since is None else round(since, 1),
+            "offline_after_min": info.get("offline_after_min"), "status": dv.status, "health": health,
+            "patient_id": dv.patient_id, "signals": info.get("signals", []), "wearable": dv.device_type in d.WEARABLES}
+
+
+@router.get("/device-profiles", tags=["devices"])
+def device_profiles(user: User = Depends(require("view_clinical"))):
+    """Product templates: what each device type measures (LOINC/UCUM), which alarm rules apply, when it counts as offline."""
+    out = []
+    for name, info in d.DEVICE_INFO.items():
+        rules = []
+        for atype in info["alarms"]:
+            bands = d.THRESHOLD_BANDS.get(atype)
+            src = d.ALARM_MEASUREMENT.get(atype)
+            rules.append({"alarm_type": atype, "signal": src, "technical": atype in d.TECHNICAL_ALARMS,
+                          "bands": {k: list(v) for k, v in bands.items()} if bands else None,
+                          "source": "threshold rule" if bands else "device event"})
+        out.append({"device_type": name, "code": d.DEVICE_TYPES[name], "model": info["model"],
+                    "connectivity": info["connectivity"], "battery_powered": info["battery"],
+                    "offline_after_min": info["offline_after_min"], "firmware_versions": info["firmware"],
+                    "signals": [{"key": s, **{k: v for k, v in d.SIGNALS[s].items() if k != "range"},
+                                 "valid_range": list(d.SIGNALS[s]["range"])} for s in info["signals"]],
+                    "alarm_rules": rules})
+    return out
+
+
+@router.get("/devices", tags=["devices"])
+def list_devices(device_type: str | None = None, health: str | None = Query(None, pattern="^(online|offline|low_battery)$"),
+                 unit: str | None = None, db: Session = Depends(get_db), user: User = Depends(require("view_clinical"))):
+    """Fleet of devices assigned to currently monitored patients, with derived connectivity/battery health."""
+    if device_type and device_type not in d.DEVICE_TYPES:
+        raise HTTPException(422, "Unknown device type")
+    if unit and unit not in d.CARE_UNITS:
+        raise HTTPException(422, "Unknown unit")
+    q = select(Device, Patient).join(Patient, Patient.patient_id == Device.patient_id).where(Device.status == "in_use")
+    if device_type:
+        q = q.where(Device.device_type == device_type)
+    if unit:
+        q = q.where(Patient.care_unit == unit)
+    now = _now()
+    items = []
+    for dv, p in db.execute(q).all():
+        row = {**_device_dict(dv, now), "synthetic_name": p.synthetic_name, "care_unit": p.care_unit}
+        if health and row["health"] != health:
+            continue
+        items.append(row)
+    summary = {h: sum(1 for i in items if i["health"] == h) for h in ("online", "offline", "low_battery")}
+    by_type = {}
+    for i in items:
+        t = by_type.setdefault(i["device_type"], {"device_type": i["device_type"], "total": 0, "online": 0, "offline": 0,
+                                                  "low_battery": 0, "firmware": {}})
+        t["total"] += 1
+        t[i["health"]] += 1
+        t["firmware"][i["firmware_version"]] = t["firmware"].get(i["firmware_version"], 0) + 1
+    items.sort(key=lambda i: ({"offline": 0, "low_battery": 1, "online": 2}[i["health"]], i["device_id"]))
+    return {"total": len(items), "summary": summary, "by_type": list(by_type.values()), "items": items}
+
+
 # ------------------------------------------------------------------------------------------- ingestion
 @router.post("/ingest/measurements", tags=["ingestion"])
 def ingest(items: list[MeasurementIn], db: Session = Depends(get_db), user: User = Depends(require("control_simulator"))):
     if len(items) > 1000:
         raise HTTPException(413, "Batch too large (max 1000)")
-    created = duplicates = alarms = missing = 0
+    created = duplicates = alarms = missing = artifacts = 0
     for it in items:
         p = _get_patient(db, it.patient_id)
         mid, ok = ingest_measurement(db, p, it.measurement_type, it.value, it.observed_at, it.received_at)
@@ -359,13 +465,16 @@ def ingest(items: list[MeasurementIn], db: Session = Depends(get_db), user: User
             continue
         created += 1
         missing += it.value is None
+        if it.value is not None and not d.in_range(it.measurement_type, it.value):
+            artifacts += 1
+            continue
         rule = d.evaluate_threshold(it.measurement_type, it.value)
         if rule and create_alarm(db, p, rule[0], rule[1], it.observed_at, "ingest-api", f"ingest-{mid}", mid, it.value):
             alarms += 1
     db.commit()
     analytics.invalidate()
     return {"received": len(items), "created": created, "duplicates_ignored": duplicates,
-            "missing_values": missing, "alarms_created": alarms}
+            "missing_values": missing, "artifacts_flagged": artifacts, "alarms_created": alarms}
 
 
 # ------------------------------------------------------------------------------------------- simulator
@@ -441,6 +550,12 @@ def reset_settings(db: Session = Depends(get_db), user: User = Depends(require("
     audit.record(db, user, "reset_settings", "settings", "global")
     db.commit()
     return settings_store.get()
+
+
+@router.get("/audit/verify", tags=["audit"])
+def audit_verify(db: Session = Depends(get_db), user: User = Depends(require("view_audit"))):
+    """Recompute the audit hash chain; any edited or deleted entry breaks it."""
+    return audit.verify(db)
 
 
 @router.get("/audit", tags=["audit"])

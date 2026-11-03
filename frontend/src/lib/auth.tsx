@@ -12,6 +12,7 @@ interface AuthCtx {
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
+export const IDLE_MINUTES = 15;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -44,6 +45,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     qc.clear();
     setUser(null);
   };
+
+  // Idle session timeout (HIPAA access-control safeguard): sign out after IDLE_MINUTES without interaction.
+  useEffect(() => {
+    if (!user) return;
+    let last = Date.now();
+    const touch = () => (last = Date.now());
+    const events = ["mousemove", "keydown", "click", "touchstart", "scroll"];
+    events.forEach((e) => window.addEventListener(e, touch, { passive: true }));
+    const timer = window.setInterval(() => {
+      if (Date.now() - last > IDLE_MINUTES * 60_000) {
+        sessionStorage.setItem("cw_idle_logout", "1");
+        logout();
+      }
+    }, 15_000);
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, touch));
+      window.clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const can = (p: string) => !!user?.permissions.includes(p);
 

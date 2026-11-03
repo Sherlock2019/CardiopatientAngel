@@ -10,9 +10,12 @@ from .config import HOSPITAL_TZ
 from .models import Alarm, CardiacMeasurement, Patient
 
 
-def classify_quality(value: float | None, observed_at: datetime, received_at: datetime) -> str:
+def classify_quality(value: float | None, observed_at: datetime, received_at: datetime,
+                     measurement_type: str | None = None) -> str:
     if value is None:
         return "missing"
+    if measurement_type and not d.in_range(measurement_type, value):
+        return "artifact"  # physiologically implausible for this signal: kept for audit, never alarmed on
     if (received_at - observed_at).total_seconds() > 300:
         return "delayed"
     return "valid"
@@ -31,7 +34,7 @@ def ingest_measurement(db: Session, patient: Patient, measurement_type: str, val
         unit=d.MEASUREMENT_UNITS[measurement_type],
         observed_at=observed_at,
         received_at=received_at,
-        quality_status=quality or classify_quality(value, observed_at, received_at),
+        quality_status=quality or classify_quality(value, observed_at, received_at, measurement_type),
     ).on_conflict_do_nothing(constraint="uq_measurement_event").returning(CardiacMeasurement.measurement_id)
     mid = db.execute(stmt).scalar()
     return mid, mid is not None

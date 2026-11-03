@@ -44,4 +44,5 @@ export const MEAS_LABEL: Record<string, string> = {
   systolic_bp: "SBP",
   diastolic_bp: "DBP",
   spo2: "SpO₂",
+  sleep_hours: "Sleep",
 };

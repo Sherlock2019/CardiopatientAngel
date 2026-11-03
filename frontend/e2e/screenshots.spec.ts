@@ -10,6 +10,7 @@ const PAGES = [
   ["/analytics", "05-risk-analytics"],
   ["/cohorts", "06-cohort-explorer"],
   ["/staffing", "07-staffing"],
+  ["/devices", "07b-devices"],
   ["/simulator", "08-simulator"],
   ["/settings", "09-settings"],
 ];

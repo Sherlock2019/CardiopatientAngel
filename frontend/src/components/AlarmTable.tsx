@@ -146,7 +146,12 @@ export function AlarmTable({ alarms, compact = false }: { alarms: Alarm[]; compa
                     </div>
                   )}
                 </td>
-                <td className="px-2 py-2 font-medium">{a.alarm_type}</td>
+                <td className="px-2 py-2 font-medium">
+                  {a.alarm_type}
+                  {a.source?.startsWith("edge-ai") && (
+                    <div className="text-[10px] font-normal text-muted" title="Detected by the on-device classifier; model version kept as provenance">on-device AI · {a.source.replace("edge-ai ", "")}</div>
+                  )}
+                </td>
                 <td className="px-2 py-2"><SeverityBadge severity={a.severity} /></td>
                 <td className="tabular px-2 py-2">{fmtTime(a.triggered_at)}</td>
                 <td className={cn("tabular px-2 py-2", (a.minutes_unacknowledged ?? 0) > 5 && "font-semibold text-crit")}>

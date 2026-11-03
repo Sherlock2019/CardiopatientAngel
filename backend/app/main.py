@@ -10,10 +10,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-from . import api, api_analytics
+from . import api, api_analytics, integration
 from .config import CORS_ORIGINS
 from .db import engine
-from .simulator import bus, simulator
+from .simulator import bus, heartbeat_loop, simulator
 
 # Logs carry request ids, route templates and exception types only — never patient data.
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -23,7 +23,11 @@ log = logging.getLogger("cardiowatch")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     bus.loop = asyncio.get_running_loop()
+    relay = asyncio.create_task(integration.relay_loop())
+    heartbeat = asyncio.create_task(heartbeat_loop())
     yield
+    relay.cancel()
+    heartbeat.cancel()
     await simulator.stop()
 
 

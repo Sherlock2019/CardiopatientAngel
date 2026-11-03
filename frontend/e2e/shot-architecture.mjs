@@ -8,7 +8,7 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1300, height: 900 } });
 await page.goto("file://" + path.join(root, "docs/architecture.html"));
 const figures = page.locator("figure");
-const names = ["ecosystem", "integration", "aws", "pipeline"];
+const names = ["platform", "ecosystem", "integration", "aws", "pipeline", "edge-ai"];
 for (let i = 0; i < (await figures.count()); i++) {
   await figures.nth(i).screenshot({ path: path.join(root, `docs/screenshots/arch-${i + 1}-${names[i] ?? "figure"}.png`) });
 }

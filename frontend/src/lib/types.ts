@@ -22,6 +22,9 @@ export interface Meta {
   shifts: { name: string; start_hour: number; end_hour: number }[];
   injected_patterns: string[];
   injected_outcome_patterns: string[];
+  device_types: string[];
+  device_info: Record<string, { model: string; connectivity: string; signals: string[]; alarms: string[]; offline_after_min: number }>;
+  technical_alarms: string[];
 }
 
 export interface AttentionFactor {

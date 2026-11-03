@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
-import { Activity, BellRing, Cpu, FlaskConical, LayoutDashboard, LogOut, Settings as Cog, Users, UsersRound, BarChart3, Radio } from "lucide-react";
+import { Activity, BellRing, Cpu, FlaskConical, LayoutDashboard, LogOut, Settings as Cog, Users, UsersRound, BarChart3, Radio, Watch } from "lucide-react";
+import Devices from "./pages/Devices";
 import { useAuth } from "./lib/auth";
 import { LiveProvider, useLive } from "./lib/live";
 import { useApi } from "./lib/api";
@@ -24,6 +25,7 @@ const NAV = [
   { to: "/analytics", label: "Risk Analytics", icon: BarChart3 },
   { to: "/cohorts", label: "Cohort Explorer", icon: FlaskConical },
   { to: "/staffing", label: "Staffing Insights", icon: UsersRound },
+  { to: "/devices", label: "Devices & Integrations", icon: Watch },
   { to: "/simulator", label: "Data Simulator", icon: Cpu },
   { to: "/settings", label: "Settings", icon: Cog },
 ];
@@ -94,6 +96,7 @@ function Shell() {
               <Route path="/analytics" element={<RiskAnalytics />} />
               <Route path="/cohorts" element={<CohortExplorer />} />
               <Route path="/staffing" element={<Staffing />} />
+              <Route path="/devices" element={<Devices />} />
               <Route path="/simulator" element={<Simulator />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<Navigate to="/" replace />} />

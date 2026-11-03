@@ -28,6 +28,20 @@ def test_generator_realism_features():
     assert len({p["care_unit"] for p in g.patients}) == len(d.CARE_UNITS)
 
 
+def test_device_capabilities_respected():
+    g = Generator(42, ANCHOR, n_patients=300).run()
+    dtype = {p["patient_id"]: p["device_type"] for p in g.patients}
+    for a in g.alarms:
+        assert a["alarm_type"] in d.DEVICE_INFO[dtype[a["patient_id"]]]["alarms"]
+    assert any(a["alarm_type"] == "Fall detected" for a in g.alarms)
+    sleep_devices = {dtype[m["patient_id"]] for m in g.measurements.values() if m["measurement_type"] == "sleep_hours"}
+    assert sleep_devices == {"Biosensor ring"}
+    edge = [a for a in g.alarms if a["source"].startswith("edge-ai")]
+    assert edge and all(dtype[a["patient_id"]] == "ECG patch" and a["alarm_type"] == "Irregular rhythm" for a in edge)
+    assert {dv["device_id"] for dv in g.devices} == {p["device_id"] for p in g.patients}
+    assert any(p["care_unit"] == d.REMOTE_UNIT for p in g.patients)
+
+
 def test_threshold_rules():
     assert d.evaluate_threshold("heart_rate", 150) == ("HR high", "critical")
     assert d.evaluate_threshold("heart_rate", 45) == ("HR low", "warning")

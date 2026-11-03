@@ -9,11 +9,11 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select, text
 
-from . import analytics
+from . import analytics, integration
 from . import domain as d
 from .db import SessionLocal
 from .ingest import create_alarm, ingest_measurement
-from .models import Patient
+from .models import Device, Patient
 
 
 class EventBus:
@@ -146,14 +146,32 @@ class Simulator:
             self._load_baselines(db, [p.patient_id for p in chosen])
             now = datetime.now(timezone.utc).replace(microsecond=0)
             new_alarms = []
+            devices = {dv.device_id: dv for dv in db.execute(
+                select(Device).where(Device.device_id.in_([p.device_id for p in chosen]))).scalars()}
             for p in chosen:
                 base = self._baselines[p.patient_id]
+                info = d.DEVICE_INFO.get(p.device_type, d.DEVICE_INFO["Bedside monitor"])
                 observed = now - timedelta(seconds=r.randint(0, 2))
                 received = observed + timedelta(seconds=r.randint(1, 4))
                 if r.random() < self.delayed_probability:
                     observed = observed - timedelta(minutes=r.uniform(6, 30))
                 signal_lost = r.random() < self.missing_probability
-                for mtype in ("heart_rate", "systolic_bp", "diastolic_bp", "spo2"):
+                dev = devices.get(p.device_id)
+                if dev:
+                    dev.last_sync_at = received
+                    if dev.battery_pct is not None:  # drain, low-battery alert at the 15% crossing, recharge when flat
+                        before = dev.battery_pct
+                        dev.battery_pct = 100 if before <= 3 else max(0, before - r.randint(0, 3))
+                        if before > 15 >= dev.battery_pct:
+                            aid = create_alarm(db, p, "Low battery", "advisory", observed, "simulator", f"sim-{uuid.uuid4().hex}")
+                            if aid:
+                                new_alarms.append((aid, p, ("Low battery", "advisory"), None))
+                if "Fall detected" in info["alarms"] and r.random() < self.abnormal_probability / 4:
+                    sev = "critical" if r.random() < 0.4 else "warning"
+                    aid = create_alarm(db, p, "Fall detected", sev, observed, "simulator", f"sim-{uuid.uuid4().hex}")
+                    if aid:
+                        new_alarms.append((aid, p, ("Fall detected", sev), None))
+                for mtype in [s for s in info["signals"] if s != "sleep_hours"]:
                     sd = {"heart_rate": 5, "systolic_bp": 8, "diastolic_bp": 5, "spo2": 0.8}[mtype]
                     value: float | None = r.gauss(base[mtype], sd)
                     if mtype == "spo2":
@@ -174,7 +192,7 @@ class Simulator:
                         continue
                     self.measurements_ingested += 1
                     rule = d.evaluate_threshold(mtype, value)
-                    if rule:
+                    if rule and rule[0] in info["alarms"]:
                         aid = create_alarm(db, p, rule[0], rule[1], observed, "simulator",
                                            f"sim-{uuid.uuid4().hex}", mid, None if value is None else round(value, 0))
                         if aid:
@@ -183,6 +201,10 @@ class Simulator:
                     aid = create_alarm(db, p, "Signal loss", "advisory", observed, "simulator", f"sim-{uuid.uuid4().hex}")
                     if aid:
                         new_alarms.append((aid, p, ("Signal loss", "advisory"), None))
+            for aid, p, (atype, sev), _ in new_alarms:
+                if sev == "critical":  # downstream systems (virtual-care platform) subscribe to critical alarms
+                    integration.emit(db, "alarm.created", {"alarm_id": aid, "patient_id": p.patient_id,
+                                                           "alarm_type": atype, "severity": sev, "care_unit": p.care_unit})
             db.commit()
             self.ticks += 1
         if new_alarms:
@@ -196,3 +218,22 @@ class Simulator:
 
 
 simulator = Simulator()
+
+
+def _heartbeat():
+    """Demo stand-in for device keep-alive pings: in-use devices keep syncing, except the deliberate offline set."""
+    with SessionLocal() as db:
+        ids = [i for i in db.execute(select(Device.device_id).where(Device.status == "in_use")).scalars()
+               if not d.demo_offline(i)]
+        db.execute(text("UPDATE devices SET last_sync_at = now() - random() * interval '3 minutes' "
+                        "WHERE device_id = ANY(:ids) AND last_sync_at < now() - interval '1 minute'"), {"ids": ids})
+        db.commit()
+
+
+async def heartbeat_loop(interval: float = 30.0):
+    while True:
+        try:
+            await asyncio.to_thread(_heartbeat)
+        except Exception:
+            pass
+        await asyncio.sleep(interval)
