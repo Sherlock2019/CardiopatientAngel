@@ -10,6 +10,8 @@ import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app import analytics, settings_store  # noqa: E402
+from app.config import DOCS_DIR  # noqa: E402
+from app.knowledge import seed_from_docs  # noqa: E402
 from app.db import Base, SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import Alarm, CardiacMeasurement, Device, Diagnosis, Medication, Patient, Treatment  # noqa: E402
@@ -40,8 +42,20 @@ def build_fixture_data(db):
                 admission_date=NOW - timedelta(days=2), monitoring_end=None,
                 care_unit="Telemetry Ward A", monitoring_status="active", discharge_outcome=None,
                 assigned_care_team="Team Blue", device_id="TEL-0002", device_type="Telemetry pack")
-    db.add_all([A, B])
+    C = Patient(patient_id="P00003", synthetic_name="Test Gamma", date_of_birth=_dob(78), sex="F",
+                admission_date=NOW - timedelta(days=12), monitoring_end=None, care_unit="Remote Monitoring",
+                monitoring_status="active", discharge_outcome=None, assigned_care_team="Team Gold",
+                device_id="CBP-0003", device_type="Cuffless BP monitor")
+    db.add_all([A, B, C])
     db.flush()
+    db.add(Device(device_id="CBP-0003", device_type="Cuffless BP monitor", model="CB-2 wrist", firmware_version="3.1.0",
+                  connectivity="BLE / LTE", battery_pct=25, last_sync_at=NOW - timedelta(minutes=5),
+                  status="in_use", patient_id="P00003"))
+    db.add(Medication(patient_id="P00003", medication_name="Metoprolol", medication_class="Beta blockers",
+                      prescribed_dose="25 mg BID", route="PO", start_time=NOW - timedelta(days=12), end_time=None, status="active"))
+    db.add(CardiacMeasurement(patient_id="P00003", device_id="CBP-0003", measurement_type="heart_rate", numeric_value=68,
+                              unit="bpm", observed_at=NOW - timedelta(hours=3), received_at=NOW - timedelta(hours=3),
+                              quality_status="valid"))
     db.add_all([
         Device(device_id="BED-0001", device_type="Bedside monitor", model="BM-500", firmware_version="4.2.1",
                connectivity="Wired / Wi-Fi", battery_pct=None, last_sync_at=NOW - timedelta(days=5),
@@ -89,6 +103,7 @@ def fresh_db():
     Base.metadata.create_all(engine)
     with SessionLocal() as db:
         build_fixture_data(db)
+        seed_from_docs(db, DOCS_DIR)
     settings_store.reset()
     settings_store.update({"small_cohort_patients": 1, "suppress_cohort_patients": 0})
     analytics.reset_cache()
@@ -120,3 +135,18 @@ def doctor(client):
 @pytest.fixture
 def admin(client):
     return login(client, "admin")
+
+
+@pytest.fixture
+def engineer(client):
+    return login(client, "eng.tran")
+
+
+@pytest.fixture
+def lead(client):
+    return login(client, "eng.lead")
+
+
+@pytest.fixture
+def patient(client):
+    return login(client, "patient.demo")

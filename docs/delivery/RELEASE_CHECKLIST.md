@@ -18,6 +18,8 @@ the quality system owner signs off. Items marked ✅ are already in place in the
 - [x] ✅ Database migrations apply cleanly from empty (Alembic in CI)
 - [ ] Static analysis, dependency and container scans: no unresolved critical findings
 - [ ] Performance check on reference load (ingestion lag, alarm latency within SLO)
+- [ ] Retry/duplicate soak test: 30 min simulator with retry injection, 0 duplicates stored (added after INC-2026-014)
+- [ ] KB-0002 regression set passes
 - [ ] Accessibility check of changed screens (severity never by colour alone)
 
 ## Risk management (7)

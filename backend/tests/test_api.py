@@ -13,7 +13,7 @@ def test_requires_authentication(client):
 
 def test_patient_list_and_detail(client, nurse):
     lst = client.get("/api/patients?status=active", headers=nurse).json()
-    assert lst["total"] == 1 and lst["items"][0]["patient_id"] == "P00002"
+    assert lst["total"] == 2 and lst["items"][0]["patient_id"] == "P00002"  # most alarms in 24 h first
     d = client.get("/api/patients/P00001", headers=nurse).json()
     assert d["age_group"] == "80-89" and d["discharge_outcome"] == "Deceased"
     assert {x["pathology_name"] for x in d["diagnoses"]} == {"Heart failure"}

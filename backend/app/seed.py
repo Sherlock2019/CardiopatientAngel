@@ -505,7 +505,8 @@ class Generator:
         return self
 
 
-TABLES = ["integration_events", "audit_log", "devices", "clinical_reviews", "alarms", "cardiac_measurements",
+TABLES = ["knowledge_uses", "knowledge_feedback", "knowledge_revisions", "knowledge_records", "checkins",
+          "integration_events", "audit_log", "devices", "clinical_reviews", "alarms", "cardiac_measurements",
           "treatments", "medications", "diagnoses", "patients"]
 
 
@@ -558,6 +559,7 @@ def main():
     args = ap.parse_args()
     if not args.reset and not is_empty():
         print("Database already seeded; use --reset to regenerate.")
+        seed_knowledge()
         return
     anchor = _anchor()
     gen = Generator(SEED_RANDOM, anchor, n_patients=args.patients).run()
@@ -567,6 +569,18 @@ def main():
           f"treatments={len(gen.treatments)}")
     print(f"  measurements={len(gen.measurements)} (duplicates dropped: {gen.duplicates_dropped}) "
           f"alarms={len(gen.alarms)} reviews={len(gen.reviews)}")
+    seed_knowledge()
+
+
+def seed_knowledge():
+    """Engineering knowledge comes from the repository's own documents (ADRs, postmortem, guides)."""
+    from .config import DOCS_DIR
+    from .db import SessionLocal
+    from .knowledge import seed_from_docs
+
+    with SessionLocal() as db:
+        n = seed_from_docs(db, DOCS_DIR)
+    print(f"  knowledge records imported from {DOCS_DIR}: {n}")
 
 
 if __name__ == "__main__":

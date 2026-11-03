@@ -15,7 +15,7 @@ from . import domain as d
 from .auth import DEMO_USERS, PERMISSIONS, User, current_user, issue_token, require
 from .db import get_db
 from .ingest import create_alarm, ingest_measurement
-from .models import (Alarm, AuditLog, CardiacMeasurement, ClinicalReview, Device, Diagnosis, IntegrationEvent, Medication,
+from .models import (Alarm, AuditLog, CardiacMeasurement, CheckIn, ClinicalReview, Device, Diagnosis, IntegrationEvent, Medication,
                      Patient, Treatment)
 from .schemas import AckIn, ConsultIn, LoginIn, MeasurementIn, ResolveIn, SettingsPatch, SimulatorConfig
 from .seed import INJECTED_PATTERNS, OUTCOME_PATTERNS
@@ -39,13 +39,24 @@ def demo_users():
     return [{"username": k, **v} for k, v in DEMO_USERS.items()]
 
 
+def demo_patient_id(db: Session) -> str | None:
+    """The synthetic patient behind the mobile demo account: first active remote-monitoring patient
+    with a cuffless BP monitor (deterministic for a given seed)."""
+    return db.execute(select(Patient.patient_id).where(
+        Patient.monitoring_status == "active", Patient.care_unit == d.REMOTE_UNIT,
+        Patient.device_type == "Cuffless BP monitor").order_by(Patient.patient_id).limit(1)).scalar()
+
+
 @router.post("/auth/login", tags=["auth"])
-def login(body: LoginIn):
+def login(body: LoginIn, db: Session = Depends(get_db)):
     if body.username not in DEMO_USERS:
         raise HTTPException(401, "Unknown demo user")
     u = DEMO_USERS[body.username]
-    return {"access_token": issue_token(body.username), "token_type": "bearer",
-            "user": {"username": body.username, **u},
+    pid = demo_patient_id(db) if u["role"] == "patient" else None
+    if u["role"] == "patient" and not pid:
+        raise HTTPException(503, "No synthetic patient available; run the seed")
+    return {"access_token": issue_token(body.username, pid), "token_type": "bearer",
+            "user": {"username": body.username, **u, "patient_id": pid},
             "permissions": sorted(p for p, roles in PERMISSIONS.items() if u["role"] in roles)}
 
 
@@ -155,6 +166,8 @@ def patient_detail(patient_id: str, db: Session = Depends(get_db), user: User = 
     recent = db.execute(select(Alarm).where(Alarm.patient_id == patient_id, Alarm.triggered_at >= now - timedelta(hours=24))).scalars().all()
     totals = db.execute(select(func.count(), func.count(Alarm.resolved_at), func.count().filter(Alarm.severity == "critical"))
                         .where(Alarm.patient_id == patient_id)).one()
+    checkins = db.execute(select(CheckIn).where(CheckIn.patient_id == patient_id)
+                          .order_by(CheckIn.submitted_at.desc()).limit(10)).scalars().all()
     audit.record(db, user, "view_patient_record", "patient", patient_id)
     db.commit()
     end = p.monitoring_end or now
@@ -175,6 +188,8 @@ def patient_detail(patient_id: str, db: Session = Depends(get_db), user: User = 
                         "end_date": t.end_date, "status": t.status} for t in tx],
         "reviews": [{"review_id": r.review_id, "alarm_id": r.alarm_id, "reviewer": r.reviewer, "review_timestamp": r.review_timestamp,
                      "disposition": r.disposition, "notes": r.notes} for r in reviews[:100]],
+        "checkins": [{"submitted_at": c.submitted_at, "feeling": c.feeling, "symptoms": [s for s in c.symptoms.split(",") if s],
+                      "took_medications": c.took_medications, "notes": c.notes, "source": c.source} for c in checkins],
         "alarm_totals": {"total": totals[0], "resolved": totals[1], "critical": totals[2]},
         "attention": analytics.attention_indicator([_alarm_dict(a) for a in recent], now) if p.monitoring_status == "active" else None,
         "synthetic": True,

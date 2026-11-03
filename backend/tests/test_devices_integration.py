@@ -9,7 +9,7 @@ from app.models import AuditLog, Device
 
 def test_device_fleet_health(client, nurse):
     r = client.get("/api/devices", headers=nurse).json()
-    assert r["total"] == 1  # returned devices are excluded
+    assert r["total"] == 2  # returned devices are excluded; problems sort first
     dev = r["items"][0]
     assert dev["device_id"] == "TEL-0002" and dev["health"] == "low_battery" and dev["care_unit"] == "Telemetry Ward A"
     with SessionLocal() as db:

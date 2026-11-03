@@ -3,6 +3,7 @@ from datetime import date, datetime
 
 from sqlalchemy import (
     Boolean,
+    Computed,
     Date,
     DateTime,
     Float,
@@ -13,6 +14,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -155,6 +157,85 @@ class Device(Base):
     last_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str] = mapped_column(String(20))  # in_use | returned
     patient_id: Mapped[str | None] = mapped_column(ForeignKey("patients.patient_id"), nullable=True, index=True)
+
+
+class CheckIn(Base):
+    """Daily check-in submitted by a patient from the mobile app."""
+    __tablename__ = "checkins"
+    checkin_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.patient_id"), index=True)
+    submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    feeling: Mapped[int] = mapped_column(Integer)  # 1 (poor) .. 5 (great)
+    symptoms: Mapped[str] = mapped_column(Text, default="")  # comma-separated from a fixed list
+    took_medications: Mapped[bool] = mapped_column(Boolean)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source: Mapped[str] = mapped_column(String(20), default="mobile")
+
+
+class KnowledgeRecord(Base):
+    """Engineering knowledge (ADRs, patterns, runbooks, postmortems...). No patient data, ever."""
+    __tablename__ = "knowledge_records"
+    knowledge_id: Mapped[str] = mapped_column(String(24), primary_key=True)
+    title: Mapped[str] = mapped_column(String(200))
+    category: Mapped[str] = mapped_column(String(60), index=True)
+    summary: Mapped[str] = mapped_column(Text)
+    content: Mapped[str] = mapped_column(Text)
+    source_type: Mapped[str] = mapped_column(String(30))
+    source_reference: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    related_project: Mapped[str] = mapped_column(String(60), default="CardioWatch AI")
+    related_feature: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    owner: Mapped[str] = mapped_column(String(60))
+    reviewer: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    approval_status: Mapped[str] = mapped_column(String(20), index=True)  # draft | in_review | approved | rejected | deprecated
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    review_due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    access_classification: Mapped[str] = mapped_column(String(20))  # public | internal | restricted
+    tags: Mapped[str] = mapped_column(Text, default="")  # comma-separated
+    superseded_by: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    redaction_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    search_tsv: Mapped[str] = mapped_column(
+        TSVECTOR, Computed("to_tsvector('english', coalesce(knowledge_id,'') || ' ' || coalesce(title,'') || ' ' || "
+                           "coalesce(summary,'') || ' ' || coalesce(content,'') || ' ' || coalesce(tags,''))", persisted=True))
+    __table_args__ = (Index("ix_knowledge_tsv", "search_tsv", postgresql_using="gin"),)
+
+
+class KnowledgeRevision(Base):
+    """Append-only history: every create, edit, submission, review and deprecation is a new row."""
+    __tablename__ = "knowledge_revisions"
+    revision_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    knowledge_id: Mapped[str] = mapped_column(ForeignKey("knowledge_records.knowledge_id"), index=True)
+    version: Mapped[int] = mapped_column(Integer)
+    changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    changed_by: Mapped[str] = mapped_column(String(60))
+    change_type: Mapped[str] = mapped_column(String(30))
+    status_after: Mapped[str] = mapped_column(String(20))
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    content_sha256: Mapped[str] = mapped_column(String(64))
+    snapshot: Mapped[str] = mapped_column(Text)  # JSON of the record at this point
+
+
+class KnowledgeFeedback(Base):
+    __tablename__ = "knowledge_feedback"
+    feedback_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    knowledge_id: Mapped[str] = mapped_column(ForeignKey("knowledge_records.knowledge_id"), index=True)
+    username: Mapped[str] = mapped_column(String(60))
+    useful: Mapped[bool] = mapped_column(Boolean)
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class KnowledgeUse(Base):
+    """Retrieval and reuse events (a record surfaced by search, or cited in a feature)."""
+    __tablename__ = "knowledge_uses"
+    use_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    knowledge_id: Mapped[str] = mapped_column(ForeignKey("knowledge_records.knowledge_id"), index=True)
+    username: Mapped[str] = mapped_column(String(60))
+    event_type: Mapped[str] = mapped_column(String(20))  # retrieved | reused
+    feature: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    query: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
 
 
 class IntegrationEvent(Base):

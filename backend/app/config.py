@@ -1,5 +1,6 @@
 """Runtime configuration. All secrets come from environment variables."""
 import os
+from pathlib import Path
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
@@ -12,3 +13,6 @@ CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:5
 # Timezone used to generate synthetic day/night patterns and as the default display timezone.
 HOSPITAL_TZ = os.getenv("HOSPITAL_TZ", "America/New_York")
 SEED_RANDOM = int(os.getenv("SEED_RANDOM", "42"))
+# Repository root (read-only) for the Engineering Hub: docs, ADRs, test evidence, source traceability.
+REPO_DIR = Path(os.getenv("REPO_DIR", Path(__file__).resolve().parents[2]))
+DOCS_DIR = REPO_DIR / "docs"

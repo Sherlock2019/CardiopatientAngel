@@ -39,7 +39,7 @@ def test_overlapping_medication_orders_not_double_counted(client, doctor):
 
 def test_repeat_alarm_detection_and_summary(client, nurse):
     s = client.get("/api/dashboard/summary", headers=nurse).json()
-    assert s["monitored_patients"] == 1
+    assert s["monitored_patients"] == 2  # P00002 (ward) + P00003 (remote monitoring)
     assert s["active_alarms"] == 1 and s["unacknowledged_alarms"] == 1
     F = an.frames()
     assert int(F.alarms["is_repeat"].sum()) == 1  # t3 repeats t2 within 120 min
@@ -49,8 +49,8 @@ def test_heatmap_counts_sum_to_total(client, doctor):
     cells = client.get("/api/analytics/hourly-heatmap?tz=UTC", headers=doctor).json()["cells"]
     assert len(cells) == 7 * 24
     assert sum(c["alarms"] for c in cells) == 4
-    # patient-hours ~ (5 + 2) days * 24 h
-    assert sum(c["patient_hours"] for c in cells) == pytest.approx(7 * 24, abs=2)
+    # patient-hours ~ (5 + 2 + 12) days * 24 h
+    assert sum(c["patient_hours"] for c in cells) == pytest.approx(19 * 24, abs=3)
 
 
 def test_cohort_intersection_of_filters():

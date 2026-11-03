@@ -10,7 +10,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-from . import api, api_analytics, integration
+from datetime import datetime, timezone
+
+from . import api, api_analytics, api_engineering, api_knowledge, api_patient, integration
 from .config import CORS_ORIGINS
 from .db import engine
 from .simulator import bus, heartbeat_loop, simulator
@@ -62,6 +64,8 @@ async def unhandled(request: Request, exc: Exception):
     rid = getattr(request.state, "request_id", "-")
     route = request.scope.get("route")
     log.error("unhandled error request_id=%s route=%s type=%s", rid, getattr(route, "path", "?"), type(exc).__name__)
+    api_engineering.ERRORS.append({"at": datetime.now(timezone.utc), "request_id": rid,
+                                   "route": getattr(route, "path", "?"), "type": type(exc).__name__})
     return JSONResponse(status_code=500, content={"detail": "Internal server error", "request_id": rid})
 
 
@@ -78,3 +82,6 @@ def health():
 
 app.include_router(api.router)
 app.include_router(api_analytics.router)
+app.include_router(api_knowledge.router)
+app.include_router(api_engineering.router)
+app.include_router(api_patient.router)
