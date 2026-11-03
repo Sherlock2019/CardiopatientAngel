@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardioWatch AI — delivery pack: POC to market</title>
+<style>
+  :root { color-scheme: light dark; --bg:#fcfcfb; --plane:#f3f6fa; --ink:#0b0b0b; --ink2:#52514e; --muted:#6f6d68; --box:#fff; --zone:#eef4fc; --line:#c3c2b7; --acc:#2a78d6; --good:#006300; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1a1a19; --plane:#0d0d0d; --ink:#f0efec; --ink2:#c3c2b7; --muted:#9a988f; --box:#232322; --zone:#16202c; --line:#383835; --acc:#5598e7; --good:#0ca30c; } }
+  body { margin:0; background:var(--plane); color:var(--ink); font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  main { max-width:1240px; margin:0 auto; padding:32px 20px 56px; }
+  h1 { font-size:26px; margin:0 0 4px; } h2 { font-size:19px; margin:40px 0 10px; }
+  .lede { color:var(--ink2); margin:0 0 20px; max-width:860px; }
+  figure { margin:0; background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:16px; }
+  svg { display:block; width:100%; height:auto; color:var(--ink); }
+  figcaption { color:var(--ink2); font-size:13.5px; margin-top:10px; }
+  .box { fill:var(--box); stroke:currentColor; stroke-width:1.4; } .boxd { fill:var(--box); stroke:var(--line); stroke-width:1.4; }
+  .done { fill:var(--zone); stroke:var(--acc); stroke-width:2; }
+  .t { font:600 15px system-ui,sans-serif; fill:currentColor; } .s { font:12px system-ui,sans-serif; fill:var(--ink2); }
+  .k { font:600 11px system-ui,sans-serif; fill:var(--acc); letter-spacing:.04em; }
+  .ex { font:italic 11.5px system-ui,sans-serif; fill:var(--muted); }
+  .bar { fill:var(--line); } .bara { fill:var(--acc); }
+  .tag { fill:var(--acc); } .tagt { font:600 10px system-ui,sans-serif; fill:#fff; }
+  .chip { fill:var(--zone); } .chipt { font:600 10.5px system-ui,sans-serif; fill:var(--acc); }
+  table { width:100%; border-collapse:collapse; background:var(--bg); border:1px solid var(--line); font-size:13.5px; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--ink2); font-weight:600; font-size:12.5px; } tr:last-child td { border-bottom:0; }
+  td.n { text-align:right; font-variant-numeric:tabular-nums; }
+  code { font-size:12px; background:var(--zone); padding:1px 5px; border-radius:4px; }
+  .grid { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); }
+  .card { background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .card h3 { margin:0 0 6px; font-size:15px; } .card p, .card li { color:var(--ink2); font-size:13.5px; margin:4px 0; }
+  .big { font-size:28px; font-weight:700; } .ok { color:var(--good); font-weight:600; }
+  ul { padding-left:18px; } .note { color:var(--muted); font-size:13px; margin-top:28px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>CardioWatch AI: from POC to market</h1>
+  <p class="lede">Delivery pack for a cardiology monitoring app built as a <b>replicable pipeline for health IoT products</b>. The plan follows
+    ITR's four-phase product journey and shows how the team would run it: architecture, backlog, standards, CI/CD, test evidence, risks and the release gate.</p>
+
+  <figure>
+    <svg viewBox="0 0 1240 330" role="img" aria-label="Four-phase roadmap. Phase 1, POC development, weeks 1 to 4, is done. Phase 2, funding and validation, months 1 to 3. Phase 3, product finalization, months 3 to 9. Phase 4, market launch, months 9 to 12 and beyond.">
+      <rect class="bar" x="20" y="34" width="1200" height="6" rx="3"/>
+      <rect class="bara" x="20" y="34" width="290" height="6" rx="3"/>
+      <circle class="bara" cx="165" cy="37" r="9"/><circle class="bar" cx="475" cy="37" r="9"/><circle class="bar" cx="785" cy="37" r="9"/><circle class="bar" cx="1095" cy="37" r="9"/>
+
+      <rect class="done" x="20" y="64" width="290" height="250" rx="12"/>
+      <text class="k" x="38" y="92">01 · POC DEVELOPMENT</text>
+      <rect class="tag" x="246" y="78" width="50" height="18" rx="9"/><text class="tagt" x="271" y="91" text-anchor="middle">DONE</text>
+      <rect class="chip" x="38" y="102" width="86" height="20" rx="10" style="fill:var(--box)"/><text class="chipt" x="81" y="116" text-anchor="middle">WEEKS 1–4</text>
+      <text class="t" x="38" y="148">Market &amp; algorithm validation</text>
+      <text class="s" x="38" y="176">• Care-team portal + alarm workflow</text>
+      <text class="s" x="38" y="198">• Shared pipeline, 5 device profiles</text>
+      <text class="s" x="38" y="220">• Analytics, audit chain, outbox</text>
+      <text class="s" x="38" y="242">• 33 + 12 tests, 1 E2E, CI</text>
+      <text class="ex" x="38" y="290">Exit: end-to-end demo, synthetic data</text>
+
+      <rect class="boxd" x="330" y="64" width="290" height="250" rx="12"/>
+      <text class="k" x="348" y="92">02 · FUNDING &amp; VALIDATION</text>
+      <rect class="chip" x="348" y="102" width="100" height="20" rx="10"/><text class="chipt" x="398" y="116" text-anchor="middle">MONTHS 1–3</text>
+      <text class="t" x="348" y="148">Prototype refinement</text>
+      <text class="s" x="348" y="176">• Intended use + regulatory pathway</text>
+      <text class="s" x="348" y="198">• Pilot: remote site + telemetry ward</text>
+      <text class="s" x="348" y="220">• Formative usability (IEC 62366-1)</text>
+      <text class="s" x="348" y="242">• First real device-cloud adapter</text>
+      <text class="ex" x="348" y="290">Exit: requirements + risk file baselined</text>
+
+      <rect class="boxd" x="640" y="64" width="290" height="250" rx="12"/>
+      <text class="k" x="658" y="92">03 · PRODUCT FINALIZATION</text>
+      <rect class="chip" x="658" y="102" width="100" height="20" rx="10"/><text class="chipt" x="708" y="116" text-anchor="middle">MONTHS 3–9</text>
+      <text class="t" x="658" y="148">Production-ready engineering</text>
+      <text class="s" x="658" y="176">• IEC 62304 DHF · ISO 14971 file</text>
+      <text class="s" x="658" y="198">• Threat model, SBOM, pen test</text>
+      <text class="s" x="658" y="220">• AWS production, SSO + MFA, FHIR</text>
+      <text class="s" x="658" y="242">• Coaching app · validation</text>
+      <text class="ex" x="658" y="290">Exit: release checklist complete</text>
+
+      <rect class="boxd" x="950" y="64" width="270" height="250" rx="12"/>
+      <text class="k" x="968" y="92">04 · MARKET LAUNCH</text>
+      <rect class="chip" x="968" y="102" width="108" height="20" rx="10"/><text class="chipt" x="1022" y="116" text-anchor="middle">MONTHS 9–12+</text>
+      <text class="t" x="968" y="148">Regulatory &amp; operations</text>
+      <text class="s" x="968" y="176">• Submission support where needed</text>
+      <text class="s" x="968" y="198">• Onboarding, BAAs, SLOs</text>
+      <text class="s" x="968" y="220">• Post-market surveillance</text>
+      <text class="s" x="968" y="242">• Product #2: profile + adapter</text>
+      <text class="ex" x="968" y="290">Exit: live, monitored, improving</text>
+    </svg>
+    <figcaption>Durations are planning estimates for the software platform. Device hardware, clinical studies and regulatory review timelines are set with ITR and the client;
+      whether CardioWatch itself is regulated device software is a phase-02 decision.</figcaption>
+  </figure>
+
+  <h2>Where the POC stands</h2>
+  <div class="grid">
+    <div class="card"><h3>Test evidence</h3><div class="big">46 <span class="ok">passing</span></div><p>33 backend · 12 frontend · 1 end-to-end clinical workflow, at commit <code>f352bdb</code>. 0 failures.</p></div>
+    <div class="card"><h3>Traceability</h3><div class="big">30</div><p>requirement IDs mapped to named automated tests; every test name verified against the run output.</p></div>
+    <div class="card"><h3>Risks tracked</h3><div class="big">15</div><p>ISO 14971-style hazards with controls and verifying tests; highest residual: alarm fatigue, monitored post-market.</p></div>
+    <div class="card"><h3>Reuse</h3><div class="big">5</div><p>device profiles on one pipeline. Product #2 ≈ 2–4 weeks of engineering plus its own validation.</p></div>
+  </div>
+
+  <h2>Why it fits ITR</h2>
+  <ul>
+    <li><b>ITR builds the devices and device clouds</b> (ECG patch, cuffless BP, biosensor ring, telemedicine SaaS). CardioWatch is the layer above: care-team alarm workflow, population analytics and integration.</li>
+    <li><b>One pipeline, many products:</b> ingestion, data quality, alarms, audit, analytics and integration events are shared; each product adds a profile and an adapter.</li>
+    <li><b>Same delivery pattern as ITR's Canadian virtual-care platform:</b> event-driven integration (SQS), OAuth 2.0 + RBAC, session timeouts, integrity hashes, audit log, UTC everywhere.</li>
+    <li><b>Edge and cloud AI ready:</b> on-device events keep their model version; clinician review dispositions become labels; updates go through change control.</li>
+  </ul>
+
+  <h2>Team &amp; cadence</h2>
+  <table>
+    <thead><tr><th>Role</th><th class="n">Count</th><th>Focus</th></tr></thead>
+    <tbody>
+      <tr><td>Tech lead / architect</td><td class="n">1</td><td>architecture decisions, reviews, risk and traceability ownership</td></tr>
+      <tr><td>Backend engineers (Python)</td><td class="n">2</td><td>pipeline, adapters, FHIR, analytics</td></tr>
+      <tr><td>Frontend / mobile (React, React Native)</td><td class="n">2</td><td>portal, coaching app, accessibility</td></tr>
+      <tr><td>QA automation</td><td class="n">1</td><td>test strategy, verification evidence</td></tr>
+      <tr><td>DevOps / cloud</td><td class="n">0.5</td><td>infrastructure as code, CI/CD, observability, security tooling</td></tr>
+      <tr><td>UX / usability</td><td class="n">0.5</td><td>IEC 62366 studies, alarm UI</td></tr>
+      <tr><td>Regulatory &amp; quality · clinical advisor</td><td class="n">shared</td><td>pathway, design history file review, alarm rules, release approval</td></tr>
+    </tbody>
+  </table>
+  <p class="lede" style="margin-top:10px">Two-week sprints. Definition of Done: tests linked to requirement IDs, risk register updated, no PHI in logs or test data, UI changes accessible.</p>
+
+  <h2>Backlog (phases 02–03)</h2>
+  <table>
+    <thead><tr><th>Epic</th><th>Key stories</th><th class="n">Points</th></tr></thead>
+    <tbody>
+      <tr><td>E1 Device integration &amp; ingestion</td><td>ITR device-cloud adapter · SQS + DLQ · FHIR R4 Observation mapping · device assignment · stale-data indicator</td><td class="n">29</td></tr>
+      <tr><td>E2 Alarm workflow</td><td>Escalation of unacknowledged critical alarms · versioned clinician-approved rules · virtual consult round-trip · alarm-fatigue dashboard</td><td class="n">26</td></tr>
+      <tr><td>E3 Patient coaching app</td><td>Offline daily check-in · reminders and device status · clinician-approved care plan</td><td class="n">18</td></tr>
+      <tr><td>E4 Security &amp; compliance</td><td>SSO + MFA · WORM audit archive · SBOM and scanning · threat model and pen test</td><td class="n">19</td></tr>
+      <tr><td>E5 Analytics</td><td>SQL materialized views · pilot report</td><td class="n">11</td></tr>
+      <tr><td>E6 Platform &amp; DevOps</td><td>Terraform for AWS · observability and SLOs · multi-instance live updates</td><td class="n">18</td></tr>
+      <tr><td>E7 Quality &amp; regulatory</td><td>IEC 62304 development plan · formative usability study · automated traceability report</td><td class="n">13</td></tr>
+    </tbody>
+  </table>
+  <p class="lede" style="margin-top:10px">Every story carries acceptance criteria and links to risks; the full list ships as <code>docs/delivery/backlog.csv</code> for Jira import.</p>
+
+  <h2>Risk register (highlights)</h2>
+  <table>
+    <thead><tr><th>ID</th><th>Hazardous situation</th><th class="n">Risk</th><th>Key controls</th><th class="n">Residual</th></tr></thead>
+    <tbody>
+      <tr><td>R-05</td><td>Excess false alarms → alarm fatigue</td><td class="n">16</td><td>Technical vs clinical split, repeat detection, approved rules, fatigue dashboard</td><td class="n">12</td></tr>
+      <tr><td>R-02</td><td>Critical alarm not acknowledged in time</td><td class="n">15</td><td>Severity-first queue, unacknowledged timer, escalation, SLO alerts</td><td class="n">10</td></tr>
+      <tr><td>R-06</td><td>On-device AI misclassifies rhythm</td><td class="n">15</td><td>Model-version provenance, clinician review, PCCP-controlled updates</td><td class="n">10</td></tr>
+      <tr><td>R-04</td><td>Stale reading shown as current</td><td class="n">12</td><td>Delayed/missing flags, device offline health, stale indicator</td><td class="n">8</td></tr>
+      <tr><td>R-12</td><td>Offline or flat wearable unnoticed</td><td class="n">12</td><td>Per-profile offline rules, low-battery alarms, fleet view</td><td class="n">8</td></tr>
+      <tr><td>R-07</td><td>Implausible value triggers or hides an alarm</td><td class="n">12</td><td>Per-signal plausible ranges → artifact, never alarmed</td><td class="n">4</td></tr>
+      <tr><td>R-09</td><td>Unauthorized record access</td><td class="n">12</td><td>Server-side RBAC, idle timeout, SSO + MFA</td><td class="n">4</td></tr>
+    </tbody>
+  </table>
+  <p class="lede" style="margin-top:10px">Risk = severity × probability (1–5 each); engineering estimates to be reviewed with clinical and regulatory staff. Full register: 15 hazards.</p>
+
+  <h2>Release gate (IEC 62304-mapped)</h2>
+  <div class="grid">
+    <div class="card"><h3>In place now</h3><ul>
+      <li>Unit/API + UI tests in CI; E2E workflow</li><li>Migrations apply from empty in CI</li><li>Requirement → test traceability</li><li>No PHI in logs; audit chain verifies</li></ul></div>
+    <div class="card"><h3>Added in phase 03</h3><ul>
+      <li>SAST, dependency and container scans; SBOM</li><li>Performance and failover checks</li><li>Risk file review per release</li><li>Signed images, archived artifacts, QMS sign-off</li></ul></div>
+    <div class="card"><h3>CI/CD target</h3><ul>
+      <li>PR: lint, types, tests, migration check, scans</li><li>main: build → sign → staging → E2E → traceability report</li><li>release: checklist → blue/green production</li></ul></div>
+  </div>
+
+  <h2>Coding standards (healthcare rules)</h2>
+  <ul>
+    <li>No PHI outside the clinical store: never in logs, metrics, tickets or test data.</li>
+    <li>UTC, timezone-aware timestamps; device time and receive time stored separately.</li>
+    <li>Idempotent ingestion; missing, stale and implausible data never shown as normal.</li>
+    <li>Alarms only from clinician-approved rules or the source device; AI output carries its model version and goes to review.</li>
+    <li>Every clinical action audited in the same transaction; severity never conveyed by colour alone.</li>
+  </ul>
+
+  <p class="note">CardioWatch AI is a proof of concept on synthetic data. It is not a medical device, not cleared by any regulator and not HIPAA compliant;
+    this pack describes how a team would take it there.</p>
+</main>
+</body>
+</html>

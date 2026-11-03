@@ -9,6 +9,9 @@
 | Demo authentication | `/api/auth/login` issues a signed HS256 JWT (12 h) for one of four synthetic staff accounts; no passwords |
 | Server-side authorization | every route depends on `require(permission)`; permission matrix in `app/auth.py` (e.g. admins cannot acknowledge alarms, nurses cannot run the simulator or read the audit log) |
 | Audit logging | `audit_log` rows for patient-record views, alarm acknowledgment, review/resolve, simulator start/stop and settings changes, written in the same transaction as the action |
+| Tamper-evident audit | each audit row stores `sha256(previous hash + row)`; `GET /api/audit/verify` recomputes the chain and reports the first broken entry |
+| Session timeout | the portal signs users out after 15 minutes without interaction |
+| Integration privacy | outbox events carry identifiers only, never free-text clinical notes |
 | No PHI in logs | the error handler logs only request id, route template and exception type; validation errors return field locations and messages, never submitted values |
 | Secrets | `SECRET_KEY`, `DATABASE_URL`, `POSTGRES_PASSWORD` from environment variables (demo defaults must be overridden anywhere shared) |
 | Parameterized queries | SQLAlchemy ORM/Core with bound parameters throughout; no string-built SQL from user input |

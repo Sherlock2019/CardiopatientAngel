@@ -1,0 +1,14 @@
+ ✓ src/test/charts.test.tsx > chart building blocks > ChartCard toggles between chart and table views
+ ✓ src/test/charts.test.tsx > chart building blocks > sequential colour scale maps 0..max onto the ramp
+ ✓ src/test/charts.test.tsx > chart building blocks > severity badges carry a text label
+ ✓ src/test/devices.test.tsx > shows fleet health, the device list and the integration outbox
+ ✓ src/test/app.test.tsx > Command Center > renders KPIs, the alarm queue and the outcome comparison
+ ✓ src/test/app.test.tsx > Command Center > switches the outcome comparison dimension
+ ✓ src/test/app.test.tsx > Command Center > shows an empty state when there are no active alarms
+ ✓ src/test/app.test.tsx > Command Center > shows loading and then an error state when the API fails
+ ✓ src/test/app.test.tsx > Command Center > drills down from an alarm to the patient
+ ✓ src/test/app.test.tsx > Command Center > expands the demo attention indicator factors
+ ✓ src/test/app.test.tsx > Command Center > acknowledges an alarm via the API
+ ✓ src/test/app.test.tsx > Live Alarms filters > sends the selected severity and status to the API
+ Test Files  3 passed (3)
+      Tests  12 passed (12)

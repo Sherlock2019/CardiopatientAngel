@@ -1,0 +1,32 @@
+Issue Type,Summary,Epic,Priority,Story Points,Labels,Description
+Epic,Device integration & ingestion,,High,,cardiowatch,Adapters for ITR device clouds; queue-based ingestion; FHIR mapping
+Epic,Alarm workflow,,High,,cardiowatch,Escalation; rule versioning; virtual consult round-trip; alarm fatigue metrics
+Epic,Patient coaching app,,Medium,,cardiowatch,React Native app with offline check-ins and reminders
+Epic,Security & compliance,,High,,cardiowatch,SSO/MFA; WORM audit; SBOM; threat model
+Epic,Analytics,,Medium,,cardiowatch,SQL materialized views; pilot report
+Epic,Platform & DevOps,,High,,cardiowatch,IaC; observability; multi-instance live updates
+Epic,Quality & regulatory,,High,,cardiowatch,IEC 62304 plan; IEC 62366 usability; traceability
+Story,CW-101 Ingest readings from an ITR device cloud via an adapter,Device integration & ingestion,High,8,ingestion;REQ-ING-01,"AC: vendor payload mapped to signal catalogue; units converted in adapter; device timestamp kept; contract tests pass"
+Story,CW-102 Move ingestion behind SQS with a dead-letter queue,Device integration & ingestion,High,5,ingestion;R-01,"AC: at-least-once delivery; DLQ with alerting; replay tool; no duplicate rows"
+Story,CW-103 Map observations to FHIR R4 Observation,Device integration & ingestion,Medium,8,fhir,"AC: LOINC + UCUM from profile; Provenance resource; passes FHIR validator"
+Story,CW-104 Device assignment workflow,Device integration & ingestion,High,5,devices;R-03,"AC: readings resolve to patient assigned at observation time; swaps audited"
+Story,CW-105 Stale-data indicator on every vital,Device integration & ingestion,High,3,ui;R-04,"AC: values older than profile threshold shown as stale; never as current"
+Story,CW-201 Escalate unacknowledged critical alarms,Alarm workflow,Highest,8,alarms;R-02,"AC: configurable per unit; charge nurse then physician; every step audited"
+Story,CW-202 Clinician-approved alarm rules with versioning,Alarm workflow,High,8,alarms;R-05,"AC: rules versioned and approved; alarm stores rule version"
+Story,CW-203 Virtual consult round-trip,Alarm workflow,Medium,5,integration;R-11,"AC: consult.requested delivered; consult.started/completed received; retries visible"
+Story,CW-204 Alarm fatigue dashboard per device and model version,Alarm workflow,Medium,5,analytics;R-05;R-06,"AC: false-alarm share from review dispositions by device type and model version"
+Story,CW-301 Daily check-in with offline queue,Patient coaching app,High,8,mobile,"AC: works offline; idempotent sync; WCAG 2.1 AA"
+Story,CW-302 Reminders and device pairing status,Patient coaching app,Medium,5,mobile;R-12,"AC: battery and last sync shown; reminder when device offline beyond threshold"
+Story,CW-303 Patient view of clinician-approved care plan,Patient coaching app,Medium,5,mobile,"AC: only clinician-released content; no direct AI advice"
+Story,CW-401 SSO with MFA replacing demo identities,Security & compliance,Highest,8,security;R-09,"AC: hospital IdP; MFA; short-lived httpOnly tokens; idle timeout kept"
+Story,CW-402 Audit archive to WORM storage,Security & compliance,High,3,security;R-10,"AC: daily ship to S3 Object Lock; verification job alerts on chain breaks"
+Story,CW-403 SBOM and dependency/container scanning in CI,Security & compliance,High,3,security;devops,"AC: CycloneDX SBOM per release; critical CVEs block release"
+Story,CW-404 Threat model and penetration test,Security & compliance,High,5,security,"AC: STRIDE model reviewed; high findings fixed before release"
+Story,CW-501 Analytics on SQL materialized views,Analytics,Medium,8,analytics,"AC: same results as reference engine; p95 < 1 s"
+Story,CW-502 Exportable pilot report,Analytics,Low,3,analytics;R-15,"AC: PDF/CSV with descriptive-not-causal disclaimer"
+Story,CW-601 Infrastructure as code for AWS,Platform & DevOps,High,8,devops,"AC: Terraform modules; staging = production code; drift detection"
+Story,CW-602 Observability and SLO alerts,Platform & DevOps,High,5,devops;R-02,"AC: ingestion lag and alarm latency SLOs; no PHI in telemetry"
+Story,CW-603 Multi-instance live updates,Platform & DevOps,Medium,5,devops,"AC: SSE fan-out via Redis or LISTEN/NOTIFY; tested with 3 replicas"
+Story,CW-701 Software development plan and requirements baseline,Quality & regulatory,High,5,regulatory,"AC: approved in QMS; requirement IDs used in tests"
+Story,CW-702 Formative usability study,Quality & regulatory,High,5,regulatory;usability,"AC: 5-8 nurses; use errors fed into risk file"
+Story,CW-703 Automated traceability report,Quality & regulatory,Medium,3,regulatory;devops,"AC: CI produces requirement-test-result matrix per release"

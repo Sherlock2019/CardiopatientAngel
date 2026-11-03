@@ -13,6 +13,8 @@ Start: `docker compose up --build`, open http://localhost:5180. Say up front: *s
 6. **Risk Analytics**: top-burden cohorts; age chart toggles Rate / Count / % patients; pathology overlap note; treatment causality warning; heatmap 06–09 peak — switch timezone to UTC and watch it shift; age × pathology small-cohort flags; medication × alarm type; trends daily/weekly.
 7. **Cohort Explorer**: Age 80–89 + 90+, Heart failure, Diuretics → *Run analysis*. Compare to all patients, show the weekly trend and drill into a contributing patient.
 8. **Staffing Insights**: shift comparison, peak windows per unit, current backlog, and the "not a staffing recommendation" note.
+8b. **Devices & Integrations**: device profiles are product templates (signals with LOINC/UCUM, allowed alarms, offline rules); the fleet shows offline and low-battery devices; on a patient with an active alarm, click **Virtual consult** and watch the `consult.requested` event go from pending to delivered in the integration outbox. Point out the *on-device AI · rhythm v1.3* provenance on ECG-patch rhythm alarms, and the burden-by-device chart (clinical vs technical) on Risk Analytics.
+8c. **Settings → Audit log**: "Chain intact" — every entry is hash-chained to the previous one.
 9. Close with **Settings → Data notes**: every pattern shown was injected on purpose.
 
 Reset the demo at any time: `docker compose exec backend python -m app.seed --reset` (or `uv run python -m app.seed --reset` locally).

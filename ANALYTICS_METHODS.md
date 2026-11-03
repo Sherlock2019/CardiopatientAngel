@@ -61,7 +61,8 @@ Alarm generation (`app/seed.py` → `INJECTED_PATTERNS`):
 - hazard rises with age group (×0.7 under 50 → ×1.8 for 90+);
 - heart failure, tachyarrhythmia, AF and bradycardia add hazard; CCU and Post-Op higher than telemetry wards;
 - hourly peak 06:00–09:00 local, secondary 18:00–20:00; slower acknowledgment 06:00–09:00 and at night;
-- antiarrhythmics → more HR-low / irregular-rhythm alarms; diuretics → more BP-low; wearable patches → more signal loss;
+- antiarrhythmics → more HR-low / irregular-rhythm alarms; diuretics → more BP-low;
+- wearables (ECG patch, cuffless BP, ring) → more signal-loss and low-battery alarms; devices only raise alarms their profile allows; falls only from cuffless BP monitors, more likely with age; Remote Monitoring has lower hazard and slower acknowledgment;
 - ~30% of alarms followed by 1–3 same-type repeats within 5–90 min; per-patient frailty (gamma) heterogeneity.
 
 Outcomes (`OUTCOME_PATTERNS`): mortality rises with age, heart failure (×2.0), tachyarrhythmia, AF, CCU stay and

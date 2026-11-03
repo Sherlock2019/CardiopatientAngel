@@ -12,6 +12,13 @@ a deceased-vs-survivor outcome comparison, and a live device simulator.
 
 ![Command Center](docs/screenshots/01-command-center.png)
 
+**One platform, many health IoT products.** CardioWatch is the cardiology app and a reusable monitoring pipeline:
+bedside, telemetry, ECG patch, cuffless BP monitor and biosensor ring are device profiles on the same pipeline, and a
+new product is added as a profile plus an adapter ([docs/ADDING_A_DEVICE.md](docs/ADDING_A_DEVICE.md)).
+
+- Architecture, integration, AWS, data pipeline, edge AI, regulatory map: [docs/architecture.html](docs/architecture.html)
+- POC-to-market delivery pack (roadmap, backlog, risks, release gate, test evidence): [docs/delivery/](docs/delivery/README.md)
+
 ## Quick start (Docker — everything)
 
 ```bash
@@ -55,9 +62,9 @@ On WSL, if the Vite dev server stalls on first load, serve a build instead: `npm
 ## Tests
 
 ```bash
-cd backend && uv run pytest                   # 24 tests: APIs, aggregation accuracy, exposure, duplicates,
-                                              # missing data, RBAC, audit trail, generator reproducibility
-cd frontend && npm test                       # 11 tests: rendering, filters, drill-down, loading/empty/error, charts
+cd backend && uv run pytest                   # 33 tests: APIs, aggregation accuracy, exposure, duplicates, missing and
+                                              # implausible data, RBAC, audit hash chain, devices, outbox, generator
+cd frontend && npm test                       # 12 tests: rendering, filters, drill-down, loading/empty/error, charts, devices
 cd frontend && npx playwright test acknowledge-workflow   # E2E (app must be running on :5180)
 ```
 
@@ -76,7 +83,8 @@ override with `TEST_DATABASE_URL`). CI runs both suites (`.github/workflows/ci.y
 | Risk Analytics | the 7 required charts (age, pathology, treatment, heatmap with timezone, age × pathology, medication × alarm type, trends); every chart has a table view |
 | Cohort Explorer | combine 9 filter types, time-valid exposure, reference cohort, weekly trend, drill-down to patients |
 | Staffing Insights | by shift, by hour, by unit with peak windows, live backlog, descriptive insight sentences |
-| Data Simulator | configurable live device stream (abnormal / duplicate / delayed / signal-loss rates) |
+| Devices & Integrations | device profiles (product templates with LOINC/UCUM signals and alarm rules), fleet health (offline, battery, firmware), integration outbox to the virtual-care platform |
+| Data Simulator | configurable live device stream (abnormal / duplicate / delayed / signal-loss rates, falls, battery drain) |
 | Settings | display timezone, repeat window, cohort-size thresholds, attention-indicator weights, injected-pattern notes, audit log |
 
 ## API
